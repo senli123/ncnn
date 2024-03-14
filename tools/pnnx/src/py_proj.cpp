@@ -16,12 +16,12 @@ namespace py = pybind11;
 // {};
 // class PyOperand:public pnnx::Operand
 // {};
-PYBIND11_MODULE(pnnx, m) {
+PYBIND11_MODULE(ptx, m) {
     m.doc() = R"pbdoc(
         nvppnnx
         -----------------------
 
-        .. currentmodule:: nvppnnx
+        .. currentmodule:: ptx
 
         .. autosummary::
            :toctree: _generate
