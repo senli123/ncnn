@@ -530,7 +530,7 @@ TORCH_LIBRARY(upfirdn2d_op, m) {
 |nn.MaxPool2d               | :heavy_check_mark: | :heavy_check_mark: |
 |nn.MaxPool3d               | :heavy_check_mark: | :heavy_check_mark: |
 |nn.MaxUnpool1d             |   |
-|nn.MaxUnpool2d             |   |
+|nn.MaxUnpool2d             | :heavy_check_mark: |
 |nn.MaxUnpool3d             |   |
 |nn.Mish                    | :heavy_check_mark: | :heavy_check_mark: |
 |nn.MultiheadAttention      | :heavy_check_mark: | :heavy_check_mark:* |
@@ -667,3 +667,10 @@ TORCH_LIBRARY(upfirdn2d_op, m) {
 |F.upsample                 | :heavy_check_mark: | :heavy_check_mark: |
 |F.upsample_bilinear        | :heavy_check_mark: | :heavy_check_mark: |
 |F.upsample_nearest         | :heavy_check_mark: | :heavy_check_mark: |
+
+
+# Supported Pytorch operator status in ptx
+| torch.nn        | Is Supported | 
+|---------------------------|----|
+|nn.MaxUnpool2d         | :heavy_check_mark: | 
+
