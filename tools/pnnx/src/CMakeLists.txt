@@ -151,6 +151,7 @@ set(pnnx_pass_level2_SRCS
     pass_level2/F_max_pool1d.cpp
     pass_level2/F_max_pool2d.cpp
     pass_level2/F_max_pool3d.cpp
+    pass_level2/F_max_unpool2d.cpp
     pass_level2/F_mish.cpp
     pass_level2/F_normalize.cpp
     pass_level2/F_pad.cpp
@@ -593,7 +594,7 @@ set(torch2pnnx_SRCS
 
     load_torchscript.cpp
 )
-
+include_directories(${Python3_INCLUDE_DIRS})
 add_library(torch2pnnx OBJECT ${torch2pnnx_SRCS})
 target_compile_definitions(torch2pnnx PRIVATE BUILD_TORCH2PNNX)
 target_compile_options(torch2pnnx PUBLIC "${TORCH_CXX_FLAGS}")
@@ -664,7 +665,18 @@ set(pnnx_SRCS
     ${pnnx_pass_ncnn_SRCS}
 )
 
-add_executable(pnnx ${pnnx_SRCS})
+# add_executable(pnnx ${pnnx_SRCS})
+file(GLOB_RECURSE SRC_PARSE_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/parse/*.cpp
+)
+file(GLOB_RECURSE HDR_PARSE_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/parse/*.h
+)
+list(APPEND SRCS ${SRC_PARSE_FILES})
+list(APPEND HDRS ${HDR_PARSE_FILES})
+
+include_directories(${TORCH_INCLUDE_DIRS})
+pybind11_add_module(pnnx ${pnnx_SRCS} ${SRCS} ${HDRS} py_proj.cpp)
 
 set_property(SOURCE main.cpp APPEND PROPERTY COMPILE_DEFINITIONS BUILD_TORCH2PNNX)
 target_link_libraries(pnnx PRIVATE torch2pnnx)
@@ -709,8 +721,8 @@ endif()
 set_target_properties(pnnx PROPERTIES MACOSX_RPATH TRUE)
 
 include(GNUInstallDirs)
-install(TARGETS pnnx RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-
+# install(TARGETS pnnx RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS pnnx LIBRARY  DESTINATION ${CMAKE_INSTALL_BINDIR})
 if (WIN32)
     file(GLOB TORCH_DLL "${TORCH_INSTALL_PREFIX}/lib/*.dll")
     install(FILES ${TORCH_DLL} DESTINATION ${CMAKE_INSTALL_BINDIR})

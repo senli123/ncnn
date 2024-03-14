@@ -16,6 +16,8 @@
 
 namespace pnnx {
 
-void fuse_custom_op(Graph& graph);
+// add by senli
+void fuse_custom_op(Graph& graph,std::set<std::string>& custom_ops);
+
 
 } // namespace pnnx

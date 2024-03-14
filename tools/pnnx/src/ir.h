@@ -312,6 +312,12 @@ public:
 
     int python(const std::string& pypath, const std::string& binpath);
 
+    //add by senli[pnnx_infer]
+    int python_infer(const std::string& pypath, const std::string& binpath,\
+     const std::vector<std::string>& customop_modules,  std::set<std::string>& custom_ops,\
+     std::string& customop_infer_py);
+
+
     int parse(const std::string& param);
 
     Operator* new_operator(const std::string& type, const std::string& name);

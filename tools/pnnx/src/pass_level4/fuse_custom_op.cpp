@@ -18,9 +18,11 @@
 
 namespace pnnx {
 
-void fuse_custom_op(Graph& graph)
+//add by senli
+void fuse_custom_op(Graph& graph, std::set<std::string>& custom_ops)
 {
-    std::set<std::string> custom_ops;
+    //add by senli
+    //std::set<std::string> custom_ops;
 
     for (;;)
     {
@@ -44,8 +46,9 @@ void fuse_custom_op(Graph& graph)
             std::string op_type_name = op->type.substr(op->type.find_last_of(':') + 1);
 
             need_fuse = true;
-
-            op->type = std::string("pnnx.custom_op.") + op_type_namespace + '.' + op_type_name;
+            //add by senli
+            // op->type = std::string("pnnx.custom_op.") + op_type_namespace + '.' + op_type_name;
+            op->type = std::string("torch.ops.") + op_type_namespace + '.' + op_type_name;
 
             std::vector<Operand*> new_inputs;
             std::vector<std::string> new_inputnames;
@@ -56,24 +59,32 @@ void fuse_custom_op(Graph& graph)
                 if (!arg->inputs.empty())
                 {
                     new_inputs.push_back(op->inputs[j]);
-                    new_inputnames.push_back(std::string("arg_") + std::to_string(j));
+                    //add by senli
+                    // new_inputnames.push_back(std::string("arg_") + std::to_string(j));
+                    new_inputnames.push_back(std::string("_") + std::to_string(j));
                     continue;
                 }
 
                 if (arg->type == "prim::Constant")
                 {
-                    op->params[std::string("arg_") + std::to_string(j)] = arg->params["value"];
+                    //add by senli
+                    // op->params[std::string("arg_") + std::to_string(j)] = arg->params["value"];
+                    op->params[std::string("_") + std::to_string(j)] = arg->params["value"];
                     op->inputs[j]->remove_consumer(op);
                 }
                 else if (arg->type == "pnnx.Expression")
                 {
-                    op->params[std::string("arg_") + std::to_string(j)] = Parameter::parse_from_string(arg->params["expr"].s);
+                     //add by senli
+                    // op->params[std::string("arg_") + std::to_string(j)] = Parameter::parse_from_string(arg->params["expr"].s);
+                    op->params[std::string("_") + std::to_string(j)] = Parameter::parse_from_string(arg->params["expr"].s);
                     op->inputs[j]->remove_consumer(op);
                 }
                 else
                 {
                     new_inputs.push_back(op->inputs[j]);
-                    new_inputnames.push_back(std::string("arg_") + std::to_string(j));
+                    //add by senli
+                    // new_inputnames.push_back(std::string("arg_") + std::to_string(j));
+                    new_inputnames.push_back(std::string("_") + std::to_string(j));
                 }
             }
 
