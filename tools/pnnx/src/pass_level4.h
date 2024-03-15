@@ -19,7 +19,8 @@
 
 namespace pnnx {
 
-void pass_level4(Graph& g);
+// add by senli
+void pass_level4(Graph& g, std::set<std::string>& custom_ops);
 
 } // namespace pnnx
 

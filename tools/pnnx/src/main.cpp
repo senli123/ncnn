@@ -160,6 +160,9 @@ static void show_usage()
     fprintf(stderr, "  pnnxparam=model.pnnx.param\n");
     fprintf(stderr, "  pnnxbin=model.pnnx.bin\n");
     fprintf(stderr, "  pnnxpy=model_pnnx.py\n");
+    // add by senli[pnnx_infer]
+    fprintf(stderr, "  pnnxinferpy=model_pnnx_infer.py\n");
+
     fprintf(stderr, "  pnnxonnx=model.pnnx.onnx\n");
     fprintf(stderr, "  ncnnparam=model.ncnn.param\n");
     fprintf(stderr, "  ncnnbin=model.ncnn.bin\n");
@@ -177,6 +180,13 @@ static void show_usage()
     fprintf(stderr, "  moduleop=models.common.Focus,models.yolo.Detect,...\n");
     fprintf(stderr, "Sample usage: pnnx mobilenet_v2.pt inputshape=[1,3,224,224]\n");
     fprintf(stderr, "              pnnx yolov5s.pt inputshape=[1,3,640,640]f32 inputshape2=[1,3,320,320]f32 device=gpu moduleop=models.common.Focus,models.yolo.Detect\n");
+    // add by senli customop_infer
+#if _WIN32
+    fprintf(stderr, "  customop_infer_py=C:\\Users\\nihui\\AppData\\Local\\torch_extensions\\torch_extensions\\Cache\\fused\\fused.py\n");
+#else
+    fprintf(stderr, "  customop_infer_py=/home/nihui/.cache/torch_extensions/fused/fused.py\n");
+#endif
+
 }
 
 int main(int argc, char** argv)
@@ -203,6 +213,8 @@ int main(int argc, char** argv)
     std::string pnnxparampath = ptbase + ".pnnx.param";
     std::string pnnxbinpath = ptbase + ".pnnx.bin";
     std::string pnnxpypath = ptbase + "_pnnx.py";
+     // add by senli[pnnx_infer]
+    std::string pnnxinferpath = ptbase + "_pnnx_infer.py";
     std::string pnnxonnxpath = ptbase + ".pnnx.onnx";
     std::string ncnnparampath = ptbase + ".ncnn.param";
     std::string ncnnbinpath = ptbase + ".ncnn.bin";
@@ -216,7 +228,8 @@ int main(int argc, char** argv)
     std::vector<std::string> input_types2;
     std::vector<std::string> customop_modules;
     std::vector<std::string> module_operators;
-
+    // add by senli
+    std::string customop_infer_py = "None";
     for (int i = 2; i < argc; i++)
     {
         // key=value
@@ -240,6 +253,10 @@ int main(int argc, char** argv)
             pnnxbinpath = std::string(value);
         if (strcmp(key, "pnnxpy") == 0)
             pnnxpypath = std::string(value);
+        // add by senli[pnnx_infer]
+        if (strcmp(key, "pnnxinferpy") == 0)
+            pnnxinferpath = std::string(value);
+
         if (strcmp(key, "pnnxonnx") == 0)
             pnnxonnxpath = std::string(value);
         if (strcmp(key, "ncnnparam") == 0)
@@ -262,6 +279,9 @@ int main(int argc, char** argv)
             parse_string_list(value, customop_modules);
         if (strcmp(key, "moduleop") == 0)
             parse_string_list(value, module_operators);
+        // add by senli
+         if (strcmp(key, "customop_infer_py") == 0)
+            customop_infer_py = value;
     }
 
     // print options
@@ -269,6 +289,9 @@ int main(int argc, char** argv)
         fprintf(stderr, "pnnxparam = %s\n", pnnxparampath.c_str());
         fprintf(stderr, "pnnxbin = %s\n", pnnxbinpath.c_str());
         fprintf(stderr, "pnnxpy = %s\n", pnnxpypath.c_str());
+        // add by senli[pnnx_infer]
+        fprintf(stderr, "pnnxinferpy = %s\n", pnnxinferpath.c_str());
+
         fprintf(stderr, "pnnxonnx = %s\n", pnnxonnxpath.c_str());
         fprintf(stderr, "ncnnparam = %s\n", ncnnparampath.c_str());
         fprintf(stderr, "ncnnbin = %s\n", ncnnbinpath.c_str());
@@ -287,6 +310,8 @@ int main(int argc, char** argv)
         fprintf(stderr, "\n");
         fprintf(stderr, "moduleop = ");
         print_string_list(module_operators);
+        // add by senli
+        fprintf(stderr, "customop_infer_py = %d\n", customop_infer_py);
         fprintf(stderr, "\n");
     }
 
@@ -309,6 +334,8 @@ int main(int argc, char** argv)
     pnnx::pass_level2(pnnx_graph);
 
     pnnx_graph.save("debug.param", "debug.bin");
+    // add by senli
+    std::set<std::string> custom_ops;
 
     if (optlevel >= 1)
     {
@@ -318,7 +345,8 @@ int main(int argc, char** argv)
 
         fprintf(stderr, "############# pass_level4\n");
 
-        pnnx::pass_level4(pnnx_graph);
+        // add by senli
+        pnnx::pass_level4(pnnx_graph, custom_ops);
     }
 
     pnnx_graph.save("debug2.param", "debug2.bin");
@@ -336,6 +364,9 @@ int main(int argc, char** argv)
     pnnx_graph.save(pnnxparampath, pnnxbinpath);
 
     pnnx_graph.python(pnnxpypath, pnnxbinpath);
+    //add by senli[pnnx_infer]
+    pnnx_graph.python_infer(pnnxinferpath, pnnxbinpath, customop_modules, custom_ops, customop_infer_py);
+
 
 #if BUILD_PNNX2ONNX
     pnnx::save_onnx(pnnx_graph, pnnxonnxpath.c_str(), fp16);

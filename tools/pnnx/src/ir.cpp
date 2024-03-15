@@ -22,7 +22,9 @@
 #include <sstream>
 #include <string>
 #include <stack>
-
+#include <regex>  
+#include <cstdio>
+#include <iostream>
 #include "storezip.h"
 #include "utils.h"
 
@@ -2615,6 +2617,1437 @@ int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
 
     return 0;
 }
+
+
+// add by senli split string
+std::vector<std::string> split_string(const std::string& s, const std::string& sub_s) {  
+    std::vector<std::string> tokens;  
+    std::string token;  
+    char delimiter = sub_s[0];
+    std::istringstream tokenStream(s);  
+    while (std::getline(tokenStream, token, delimiter)) {  
+        tokens.push_back(token);  
+    }  
+    return tokens;  
+}  
+
+// add by senli match function and insert 
+int insert_function(FILE* pyfp, std::vector<std::string>& custom_ops_names, std::string& customop_infer_py)
+{
+    std::ifstream file(customop_infer_py); 
+    
+    if (!file) {  
+        std::cout << "can not open customop_infer_py" << std::endl;  
+        return -1;  
+    }  
+  
+    std::string line;  
+    std::ostringstream functionContent;  
+    bool insideFunction = false;  
+  
+    std::regex functionStartRegex(R"(\s*def\s+(\w+)\s*\(.*\):)");  
+    std::regex pattern("^import");    
+    std::smatch match;  
+  
+    while (std::getline(file, line)) {  
+        if (std::regex_search(line, match, pattern)){
+            functionContent << line << std::endl;
+        }
+        if (std::regex_search(line, match, functionStartRegex)) { 
+            bool found = std::find(custom_ops_names.begin(), custom_ops_names.end(), match[1]) != custom_ops_names.end();
+            if (found) {  
+                insideFunction = true;  
+                functionContent << line << std::endl;  
+            } else {  
+                insideFunction = false; // if function not in custom_ops_names, stop get current content  
+            }  
+        } else if (insideFunction) {  
+            // if not meet th end of func, continue get content 
+            functionContent << line << std::endl;  
+        }  
+    }  
+  
+    file.close();  
+  
+    if (insideFunction) {  
+        std::cout << "the content of func:" << std::endl << functionContent.str() << std::endl;  
+    } else {  
+        std::cout << "can not find func" << std::endl;  
+    } 
+    
+    std::string str = functionContent.str(); 
+    std::istringstream iss(str);              
+    std::string line1;  
+    std::vector<std::string> lines;  
+  
+    while (std::getline(iss, line1)) {  
+       fprintf(pyfp, "%s", (line1 + "\n").c_str());
+   
+    } 
+    return 1;
+}
+
+int Graph::python_infer(const std::string& pypath, const std::string& binpath,\
+     const std::vector<std::string>& customop_modules,  std::set<std::string>& custom_ops,\
+     std::string& customop_infer_py)
+{
+    FILE* pyfp = fopen(pypath.c_str(), "wb");
+    if (!pyfp)
+    {
+        fprintf(stderr, "fopen %s failed\n", pypath.c_str());
+        return -1;
+    }
+
+    fprintf(pyfp, "import os\n");
+    fprintf(pyfp, "import numpy as np\n");
+    fprintf(pyfp, "import tempfile, zipfile\n");
+    fprintf(pyfp, "import torch\n");
+    fprintf(pyfp, "import torch.nn as nn\n");
+    fprintf(pyfp, "import torch.nn.functional as F\n");
+    fprintf(pyfp, "try:\n");
+    fprintf(pyfp, "    import torchvision\n");
+    fprintf(pyfp, "except:\n");
+    fprintf(pyfp, "    pass\n");
+
+    fprintf(pyfp, "\n");
+    //add by senli 2024015 load custom_op lib
+    if (customop_infer_py == "None")
+    {
+        for (auto m : customop_modules)
+        {
+            #ifdef _WIN32  
+                fprintf(pyfp, "torch.ops.load_library(r'%s", m.c_str());
+            #elif defined(__linux__)  
+                fprintf(pyfp, "torch.ops.load_library('%s", m.c_str());
+            #elif defined(__APPLE__)  
+                fprintf(pyfp, "torch.ops.load_library('%s", m.c_str());
+            #endif
+        
+            fprintf(pyfp, "')\n");
+        }
+    }
+    else
+    {
+        // add by senli insert custom_op_infer
+        std::vector<std::string> custom_ops_names;
+        for (const auto& custom_op : custom_ops) {  
+            std::vector<std::string> tokens = split_string(custom_op, "."); 
+            std::reverse(tokens.begin(), tokens.end()); 
+            std::string custom_op_name = tokens.at(0);
+            custom_ops_names.push_back(custom_op_name);
+        }  
+        int insert_flag = insert_function(pyfp, custom_ops_names, customop_infer_py);
+        if(insert_flag == -1)
+        {
+            std::cerr << "please check th path of customop_infer_py" << std::endl;  
+            return -1;
+        }
+    }
+    
+    //add by senli[pnnx_infer]
+    fprintf(pyfp, "class Model(nn.Module):\n");
+    fprintf(pyfp, "    def __init__(self, bin_path, infer_flag = False):\n");
+    fprintf(pyfp, "        super(Model, self).__init__()\n");
+
+    fprintf(pyfp, "\n");
+
+    // module
+    {
+        //add by senli[pnnx_infer]
+        fprintf(pyfp, "        self.infer_flag = infer_flag\n");
+        for (const Operator* op : ops)
+        {
+            if (op->type.substr(0, 3) != "nn." && op->type.substr(0, 16) != "torchvision.ops.")
+                continue;
+
+            fprintf(pyfp, "        self.%s = %s(", sanitize_identifier(op->name).c_str(), op->type.c_str());
+
+            int param_count = op->params.size();
+            if (op->type == "nn.quantized.Conv2d" || op->type == "nn.quantized.Linear")
+            {
+                param_count -= 2; // ignore scale and zero_point
+            }
+
+            int param_index = 0;
+            for (const auto& it : op->params)
+            {
+                if (op->type == "nn.quantized.Conv2d" || op->type == "nn.quantized.Linear")
+                {
+                    if (it.first == "scale" || it.first == "zero_point")
+                        continue;
+                }
+
+                fprintf(pyfp, "%s=", it.first.c_str());
+
+                const Parameter& param = it.second;
+                if (param.type == 0)
+                {
+                    fprintf(pyfp, "None");
+                }
+                if (param.type == 1)
+                {
+                    if (param.b)
+                        fprintf(pyfp, "True");
+                    else
+                        fprintf(pyfp, "False");
+                }
+                if (param.type == 2)
+                {
+                    fprintf(pyfp, "%d", param.i);
+                }
+                if (param.type == 3)
+                {
+                    fprintf(pyfp, "%f", param.f);
+                }
+                if (param.type == 4)
+                {
+                    if (param.s.substr(0, 6) == "torch.")
+                    {
+                        fprintf(pyfp, "%s", param.s.c_str());
+                    }
+                    else
+                    {
+                        fprintf(pyfp, "\'%s\'", param.s.c_str());
+                    }
+                }
+                if (param.type == 5)
+                {
+                    fprintf(pyfp, "(");
+                    for (size_t i = 0; i < param.ai.size(); i++)
+                    {
+                        if ((op->type == "nn.AdaptiveAvgPool2d"
+                                || op->type == "nn.AdaptiveAvgPool3d"
+                                || op->type == "nn.AdaptiveMaxPool2d"
+                                || op->type == "nn.AdaptiveMaxPool3d")
+                                && it.first == "output_size" && param.ai[i] == 0)
+                        {
+                            fprintf(pyfp, "None");
+                        }
+                        else
+                        {
+                            fprintf(pyfp, "%d", param.ai[i]);
+                        }
+                        if (i + 1 != param.ai.size() || param.ai.size() == 1)
+                            fprintf(pyfp, ",");
+                    }
+                    fprintf(pyfp, ")");
+                }
+                if (param.type == 6)
+                {
+                    fprintf(pyfp, "(");
+                    for (size_t i = 0; i < param.af.size(); i++)
+                    {
+                        fprintf(pyfp, "%f", param.af[i]);
+                        if (i + 1 != param.af.size() || param.af.size() == 1)
+                            fprintf(pyfp, ",");
+                    }
+                    fprintf(pyfp, ")");
+                }
+                if (param.type == 7)
+                {
+                    fprintf(pyfp, "(");
+                    for (size_t i = 0; i < param.as.size(); i++)
+                    {
+                        if (param.as[i].substr(0, 6) == "torch.")
+                        {
+                            fprintf(pyfp, "%s", param.as[i].c_str());
+                        }
+                        else
+                        {
+                            fprintf(pyfp, "\'%s\'", param.as[i].c_str());
+                        }
+                        if (i + 1 != param.as.size() || param.as.size() == 1)
+                            fprintf(pyfp, ",");
+                    }
+                    fprintf(pyfp, ")");
+                }
+
+                param_index++;
+                if (param_index != param_count)
+                    fprintf(pyfp, ", ");
+            }
+
+            fprintf(pyfp, ")\n");
+        }
+    }
+
+    fprintf(pyfp, "\n");
+
+    // load weights
+    //add by senli
+    {
+        fprintf(pyfp, "        archive = zipfile.ZipFile(bin_path, 'r')\n");//fix to bin_path
+
+        for (const Operator* op : ops)
+        {
+            if (op->type.substr(0, 3) != "nn." && op->type.substr(0, 16) != "torchvision.ops.")
+                continue;
+
+            if (op->type == "nn.quantized.Conv2d" || op->type == "nn.quantized.Linear")
+            {
+                for (const auto& it : op->attrs)
+                {
+                    if (it.first == "weight" || it.first == "bias")
+                    {
+                        fprintf(pyfp, "        self_%s_%s = self.load_pnnx_bin_as_parameter(archive, '%s.%s', (", sanitize_identifier(op->name).c_str(), it.first.c_str(), op->name.c_str(), it.first.c_str());
+                    }
+                    else
+                    {
+                        // unknown attr
+                        continue;
+                    }
+
+                    const Attribute& attr = it.second;
+                    for (size_t i = 0; i < attr.shape.size(); i++)
+                    {
+                        fprintf(pyfp, "%d", attr.shape[i]);
+                        if (i + 1 != attr.shape.size())
+                            fprintf(pyfp, ",");
+                    }
+
+                    fprintf(pyfp, "), '%s', requires_grad=False)\n", type_to_numpy_string(attr.type));
+                }
+
+                fprintf(pyfp, "        self.%s.set_weight_bias(self_%s_weight, self_%s_bias)\n", sanitize_identifier(op->name).c_str(), sanitize_identifier(op->name).c_str(), sanitize_identifier(op->name).c_str());
+                fprintf(pyfp, "        self.%s.scale = %f\n", sanitize_identifier(op->name).c_str(), op->params.at("scale").f);
+                fprintf(pyfp, "        self.%s.zero_point = %d\n", sanitize_identifier(op->name).c_str(), op->params.at("zero_point").i);
+
+                continue;
+            }
+
+            for (const auto& it : op->attrs)
+            {
+                if (it.first == "running_mean" || it.first == "running_var")
+                {
+                    fprintf(pyfp, "        self.%s.%s = self.load_pnnx_bin_as_tensor(archive, '%s.%s', (", sanitize_identifier(op->name).c_str(), it.first.c_str(), op->name.c_str(), it.first.c_str());
+                }
+                else
+                {
+                    fprintf(pyfp, "        self.%s.%s = self.load_pnnx_bin_as_parameter(archive, '%s.%s', (", sanitize_identifier(op->name).c_str(), it.first.c_str(), op->name.c_str(), it.first.c_str());
+                }
+
+                const Attribute& attr = it.second;
+                for (size_t i = 0; i < attr.shape.size(); i++)
+                {
+                    fprintf(pyfp, "%d", attr.shape[i]);
+                    if (i + 1 != attr.shape.size())
+                        fprintf(pyfp, ",");
+                }
+
+                if (attr.type == 1 || attr.type == 2 || attr.type == 3)
+                {
+                    fprintf(pyfp, "), '%s')\n", type_to_numpy_string(attr.type));
+                }
+                else
+                {
+                    fprintf(pyfp, "), '%s', requires_grad=False)\n", type_to_numpy_string(attr.type));
+                }
+            }
+        }
+
+        for (const Operator* op : ops)
+        {
+            if (op->type != "pnnx.Attribute")
+                continue;
+
+            const std::string& key = op->attrs.begin()->first;
+            const Attribute& attr = op->attrs.begin()->second;
+
+            bool is_running_mean_var = false;
+            {
+                const Operand* r = op->outputs[0];
+                if (r->consumers.size() == 1)
+                {
+                    const Operator* op2 = r->consumers[0];
+                    if (op2->type == "F.batch_norm" || op2->type == "F.instance_norm")
+                    {
+                        if (r == op2->inputs[1] || r == op2->inputs[2])
+                        {
+                            is_running_mean_var = true;
+                        }
+                    }
+                }
+            }
+
+            bool is_empty = false;
+            for (size_t i = 0; i < attr.shape.size(); i++)
+            {
+                if (attr.shape[i] == 0)
+                    is_empty = true;
+            }
+
+            if (is_empty)
+            {
+                fprintf(pyfp, "        self.%s_%s = torch.from_numpy(np.empty((", sanitize_identifier(op->name).c_str(), sanitize_identifier(key).c_str());
+
+                for (size_t i = 0; i < attr.shape.size(); i++)
+                {
+                    fprintf(pyfp, "%d,", attr.shape[i]);
+                }
+
+                fprintf(pyfp, "), dtype='%s'))\n", type_to_numpy_string(attr.type));
+            }
+            else
+            {
+                if (is_running_mean_var)
+                {
+                    fprintf(pyfp, "        self.%s_%s = self.load_pnnx_bin_as_tensor(archive, '%s.%s', (", sanitize_identifier(op->name).c_str(), sanitize_identifier(key).c_str(), op->name.c_str(), key.c_str());
+                }
+                else
+                {
+                    fprintf(pyfp, "        self.%s_%s = self.load_pnnx_bin_as_parameter(archive, '%s.%s', (", sanitize_identifier(op->name).c_str(), sanitize_identifier(key).c_str(), op->name.c_str(), key.c_str());
+                }
+
+                for (size_t i = 0; i < attr.shape.size(); i++)
+                {
+                    fprintf(pyfp, "%d,", attr.shape[i]);
+                }
+
+                if (attr.type == 1 || attr.type == 2 || attr.type == 3)
+                {
+                    fprintf(pyfp, "), '%s')\n", type_to_numpy_string(attr.type));
+                }
+                else
+                {
+                    fprintf(pyfp, "), '%s', requires_grad=False)\n", type_to_numpy_string(attr.type));
+                }
+            }
+        }
+
+        fprintf(pyfp, "        archive.close()\n");
+    }
+
+    fprintf(pyfp, "\n");
+
+    // get input_shape add by senli[pnnx_infer]
+    {
+
+        // example:
+        // def getInput(self,):
+        //     return [[1, 3, 32, 32],[1,3,64,64]]
+        
+        fprintf(pyfp, "    def getInput(self,):\n");
+        fprintf(pyfp, "        return [");
+        //获得op的所有输入的shape
+        std::vector<std::vector<int>> input_shapes;
+        for (const Operator* op : ops)
+        {
+            if (op->type != "pnnx.Input")
+                continue;
+            const Operand* r = op->outputs[0];
+            input_shapes.push_back(r->shape);
+        }
+        //依次写入shape
+        for (size_t i = 0; i < input_shapes.size(); i++)
+        {
+            std::vector<int> one_input_shape = input_shapes[i];
+            fprintf(pyfp, "[");
+            for (size_t j = 0; j < one_input_shape.size(); j++)
+            {
+                fprintf(pyfp, "%d", one_input_shape[j]);
+                if (j + 1 != one_input_shape.size())
+                    fprintf(pyfp, ", ");
+            }
+            fprintf(pyfp, "]");
+            if (i + 1 != input_shapes.size())
+                fprintf(pyfp, ", ");
+        }
+        fprintf(pyfp, "]\n");
+    }
+    // utility function
+    {
+        fprintf(pyfp, "    def load_pnnx_bin_as_parameter(self, archive, key, shape, dtype, requires_grad=True):\n");
+        fprintf(pyfp, "        return nn.Parameter(self.load_pnnx_bin_as_tensor(archive, key, shape, dtype), requires_grad)\n");
+        fprintf(pyfp, "\n");
+        fprintf(pyfp, "    def load_pnnx_bin_as_tensor(self, archive, key, shape, dtype):\n");
+        fprintf(pyfp, "        fd, tmppath = tempfile.mkstemp()\n");
+        fprintf(pyfp, "        with os.fdopen(fd, 'wb') as tmpf, archive.open(key) as keyfile:\n");
+        fprintf(pyfp, "            tmpf.write(keyfile.read())\n");
+        fprintf(pyfp, "        m = np.memmap(tmppath, dtype=dtype, mode='r', shape=shape).copy()\n");
+        fprintf(pyfp, "        os.remove(tmppath)\n");
+        fprintf(pyfp, "        return torch.from_numpy(m)\n");
+    }
+
+    fprintf(pyfp, "\n");
+
+    // def forward
+    {
+        fprintf(pyfp, "    def forward(self");
+
+        for (const Operator* op : ops)
+        {
+            if (op->type != "pnnx.Input")
+                continue;
+
+            fprintf(pyfp, ", v_%s", sanitize_identifier(op->outputs[0]->name).c_str());
+        }
+
+        fprintf(pyfp, "):\n");
+    }
+
+    // forward body
+    {
+        for (const Operator* op : ops)
+        {
+            if (op->type == "pnnx.Input" || op->type == "pnnx.Output")
+                continue;
+
+            if (op->type == "pnnx.SliceIndexes")
+                continue;
+
+            fprintf(pyfp, "        ");
+
+            if (op->type == "pnnx.Expression")
+            {
+                // expr
+                for (size_t i = 0; i < op->outputs.size(); i++)
+                {
+                    fprintf(pyfp, "v_%s", sanitize_identifier(op->outputs[i]->name).c_str());
+                    if (i + 1 != op->outputs.size())
+                        fprintf(pyfp, ", ");
+                }
+                std::string expanded_expr = expand_expression(op);
+                fprintf(pyfp, " = %s\n", expanded_expr.c_str());
+            }
+            else if (op->type == "pnnx.Attribute")
+            {
+                const std::string& key = op->attrs.begin()->first;
+                fprintf(pyfp, "v_%s = self.%s_%s\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->name).c_str(), sanitize_identifier(key).c_str());
+            }
+            else if (op->type == "Tensor.slice")
+            {
+                // slice expr
+                std::string slice_expr = make_slice_expression(op);
+                fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), slice_expr.c_str());
+            }
+            else if (op->type == "Tensor.slice_copy")
+            {
+                // slice copy expr
+                std::string slice_expr = make_slice_expression(op);
+                fprintf(pyfp, "v_%s = v_%s\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str());
+                fprintf(pyfp, "        v_%s[%s] = v_%s\n", sanitize_identifier(op->outputs[0]->name).c_str(), slice_expr.c_str(), sanitize_identifier(op->inputs[1]->name).c_str());
+            }
+            else if (op->type == "Tensor.index")
+            {
+                // index expr
+                if (op->inputs.size() == 2)
+                {
+                    std::string expanded_expr = expand_expression(op->inputs[1]->producer);
+                    fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), expanded_expr.c_str());
+                }
+                else
+                {
+                    std::string index_expr = make_index_expression(op);
+                    fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), index_expr.c_str());
+                }
+            }
+            else if (op->type == "Tensor.expand")
+            {
+                // expand
+                fprintf(pyfp, "v_%s = v_%s.%s(", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), op->type.substr(7).c_str());
+                if (op->inputs.size() == 2)
+                {
+                    fprintf(pyfp, "*v_%s", sanitize_identifier(op->inputs[1]->name).c_str());
+                }
+                else
+                {
+                    const std::vector<int>& shape = op->params.at("shape").ai;
+                    for (size_t i = 0; i < shape.size(); i++)
+                    {
+                        fprintf(pyfp, "%d", shape[i]);
+                        if (i + 1 != shape.size())
+                            fprintf(pyfp, ", ");
+                    }
+                }
+                fprintf(pyfp, ")\n");
+            }
+            else if (op->type == "Tensor.view" || op->type == "Tensor.reshape")
+            {
+                // view reshape
+                fprintf(pyfp, "v_%s = v_%s.%s(", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), op->type.substr(7).c_str());
+                if (op->inputs.size() == 2)
+                {
+                    fprintf(pyfp, "*v_%s", sanitize_identifier(op->inputs[1]->name).c_str());
+                }
+                else
+                {
+                    const std::vector<int>& shape = op->params.at("shape").ai;
+                    for (size_t i = 0; i < shape.size(); i++)
+                    {
+                        fprintf(pyfp, "%d", shape[i]);
+                        if (i + 1 != shape.size())
+                            fprintf(pyfp, ", ");
+                    }
+                }
+                fprintf(pyfp, ")\n");
+            }
+            else if (op->type == "Tensor.repeat")
+            {
+                // view reshape
+                fprintf(pyfp, "v_%s = v_%s.%s(", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), op->type.substr(7).c_str());
+                if (op->inputs.size() == 2)
+                {
+                    fprintf(pyfp, "*v_%s", sanitize_identifier(op->inputs[1]->name).c_str());
+                }
+                else
+                {
+                    const std::vector<int>& sizes = op->params.at("sizes").ai;
+                    for (size_t i = 0; i < sizes.size(); i++)
+                    {
+                        fprintf(pyfp, "%d", sizes[i]);
+                        if (i + 1 != sizes.size())
+                            fprintf(pyfp, ", ");
+                    }
+                }
+                fprintf(pyfp, ")\n");
+            }
+            else if (op->type == "torch.cat" || op->type == "torch.stack")
+            {
+                // cat
+                fprintf(pyfp, "v_%s = %s(", sanitize_identifier(op->outputs[0]->name).c_str(), op->type.c_str());
+                if (op->inputs.size() == 1)
+                {
+                    fprintf(pyfp, "v_%s", sanitize_identifier(op->inputs[0]->name).c_str());
+                }
+                else
+                {
+                    fprintf(pyfp, "(");
+                    for (size_t i = 0; i < op->inputs.size(); i++)
+                    {
+                        fprintf(pyfp, "v_%s", sanitize_identifier(op->inputs[i]->name).c_str());
+                        if (i + 1 != op->inputs.size())
+                            fprintf(pyfp, ", ");
+                    }
+                    fprintf(pyfp, ")");
+                }
+                fprintf(pyfp, ", dim=%d", op->params.at("dim").i);
+                fprintf(pyfp, ")\n");
+            }
+            else if (op->type == "torch.einsum")
+            {
+                // einsum
+                fprintf(pyfp, "v_%s = %s(", sanitize_identifier(op->outputs[0]->name).c_str(), op->type.c_str());
+
+                fprintf(pyfp, "\'%s\'", op->params.at("equation").s.c_str());
+
+                for (size_t i = 0; i < op->inputs.size(); i++)
+                {
+                    fprintf(pyfp, ", v_%s", sanitize_identifier(op->inputs[i]->name).c_str());
+                }
+                fprintf(pyfp, ")\n");
+            }
+            else if (op->type == "prim::TupleUnpack")
+            {
+                for (size_t i = 0; i < op->outputs.size(); i++)
+                {
+                    fprintf(pyfp, "v_%s", sanitize_identifier(op->outputs[i]->name).c_str());
+                    if (i + 1 != op->outputs.size())
+                        fprintf(pyfp, ", ");
+                }
+                fprintf(pyfp, " = v_%s\n", sanitize_identifier(op->inputs[0]->name).c_str());
+            }
+            else if (op->type == "prim::TupleConstruct")
+            {
+                fprintf(pyfp, "v_%s", sanitize_identifier(op->outputs[0]->name).c_str());
+                fprintf(pyfp, " = (");
+                for (size_t i = 0; i < op->inputs.size(); i++)
+                {
+                    fprintf(pyfp, "v_%s, ", sanitize_identifier(op->inputs[i]->name).c_str());
+                }
+                fprintf(pyfp, ")\n");
+            }
+            else if (op->type == "prim::ListUnpack")
+            {
+                for (size_t i = 0; i < op->outputs.size(); i++)
+                {
+                    fprintf(pyfp, "v_%s", sanitize_identifier(op->outputs[i]->name).c_str());
+                    if (i + 1 != op->outputs.size())
+                        fprintf(pyfp, ", ");
+                }
+                fprintf(pyfp, " = v_%s\n", sanitize_identifier(op->inputs[0]->name).c_str());
+            }
+            else if (op->type == "prim::ListConstruct")
+            {
+                fprintf(pyfp, "v_%s", sanitize_identifier(op->outputs[0]->name).c_str());
+                fprintf(pyfp, " = [");
+                for (size_t i = 0; i < op->inputs.size(); i++)
+                {
+                    fprintf(pyfp, "v_%s", sanitize_identifier(op->inputs[i]->name).c_str());
+                    if (i + 1 != op->inputs.size())
+                        fprintf(pyfp, ", ");
+                }
+                fprintf(pyfp, "]\n");
+            }
+            else if (op->type == "nn.GRU" || op->type == "nn.RNN")
+            {
+                if (op->outputs.size() == 1)
+                {
+                    fprintf(pyfp, "v_%s, _", sanitize_identifier(op->outputs[0]->name).c_str());
+                }
+                else
+                {
+                    fprintf(pyfp, "v_%s, v_%s", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->outputs[1]->name).c_str());
+                }
+                fprintf(pyfp, " = self.%s(", sanitize_identifier(op->name).c_str());
+                fprintf(pyfp, "v_%s", sanitize_identifier(op->inputs[0]->name).c_str());
+                if (op->inputs.size() == 2)
+                {
+                    fprintf(pyfp, ", v_%s", sanitize_identifier(op->inputs[1]->name).c_str());
+                }
+                fprintf(pyfp, ")\n");
+            }
+            else if (op->type == "nn.LSTM")
+            {
+                if (op->outputs.size() == 1)
+                {
+                    fprintf(pyfp, "v_%s, _", sanitize_identifier(op->outputs[0]->name).c_str());
+                }
+                else
+                {
+                    fprintf(pyfp, "v_%s, (v_%s, v_%s)", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->outputs[1]->name).c_str(), sanitize_identifier(op->outputs[2]->name).c_str());
+                }
+                fprintf(pyfp, " = self.%s(", sanitize_identifier(op->name).c_str());
+                fprintf(pyfp, "v_%s", sanitize_identifier(op->inputs[0]->name).c_str());
+                if (op->inputs.size() == 3)
+                {
+                    fprintf(pyfp, ", (v_%s, v_%s)", sanitize_identifier(op->inputs[1]->name).c_str(), sanitize_identifier(op->inputs[2]->name).c_str());
+                }
+                fprintf(pyfp, ")\n");
+            }
+            else if (op->type == "nn.MultiheadAttention")
+            {
+                bool need_weights = true;
+                if (op->outputs.size() == 1)
+                {
+                    fprintf(pyfp, "v_%s, _", sanitize_identifier(op->outputs[0]->name).c_str());
+                    need_weights = false;
+                }
+                else
+                {
+                    for (size_t i = 0; i < op->outputs.size(); i++)
+                    {
+                        fprintf(pyfp, "v_%s", sanitize_identifier(op->outputs[i]->name).c_str());
+                        if (i + 1 != op->outputs.size())
+                            fprintf(pyfp, ", ");
+                    }
+                }
+                fprintf(pyfp, " = self.%s(", sanitize_identifier(op->name).c_str());
+                if (op->inputs.size() == 1)
+                {
+                    std::string in0 = sanitize_identifier(op->inputs[0]->name);
+                    fprintf(pyfp, "v_%s, v_%s, v_%s", in0.c_str(), in0.c_str(), in0.c_str());
+                }
+                else if (op->inputs.size() == 2)
+                {
+                    std::string in0 = sanitize_identifier(op->inputs[0]->name);
+                    std::string in1 = sanitize_identifier(op->inputs[1]->name);
+                    if (op->inputnames.size() == 2 && op->inputnames[1] == "attn_mask")
+                    {
+                        fprintf(pyfp, "v_%s, v_%s, v_%s, attn_mask=v_%s", in0.c_str(), in0.c_str(), in0.c_str(), in1.c_str());
+                    }
+                    else
+                    {
+                        fprintf(pyfp, "v_%s, v_%s, v_%s", in0.c_str(), in1.c_str(), in1.c_str());
+                    }
+                }
+                else if (op->inputs.size() == 3)
+                {
+                    std::string in0 = sanitize_identifier(op->inputs[0]->name);
+                    std::string in1 = sanitize_identifier(op->inputs[1]->name);
+                    std::string in2 = sanitize_identifier(op->inputs[2]->name);
+                    if (op->inputnames.size() == 3 && op->inputnames[2] == "attn_mask")
+                    {
+                        fprintf(pyfp, "v_%s, v_%s, v_%s, attn_mask=v_%s", in0.c_str(), in1.c_str(), in1.c_str(), in2.c_str());
+                    }
+                    else
+                    {
+                        fprintf(pyfp, "v_%s, v_%s, v_%s", in0.c_str(), in1.c_str(), in2.c_str());
+                    }
+                }
+                else if (op->inputs.size() == 4)
+                {
+                    std::string in0 = sanitize_identifier(op->inputs[0]->name);
+                    std::string in1 = sanitize_identifier(op->inputs[1]->name);
+                    std::string in2 = sanitize_identifier(op->inputs[2]->name);
+                    std::string in3 = sanitize_identifier(op->inputs[3]->name);
+                    if (op->inputnames.size() == 4 && op->inputnames[3] == "attn_mask")
+                    {
+                        fprintf(pyfp, "v_%s, v_%s, v_%s, attn_mask=v_%s", in0.c_str(), in1.c_str(), in2.c_str(), in3.c_str());
+                    }
+                    else
+                    {
+                        fprintf(pyfp, "v_%s, v_%s, v_%s, v_%s", in0.c_str(), in1.c_str(), in2.c_str(), in3.c_str());
+                    }
+                }
+                else
+                {
+                    for (size_t i = 0; i < op->inputs.size(); i++)
+                    {
+                        fprintf(pyfp, "v_%s", sanitize_identifier(op->inputs[i]->name).c_str());
+                        if (i + 1 != op->inputs.size())
+                            fprintf(pyfp, ", ");
+                    }
+                }
+                if (need_weights)
+                {
+                    fprintf(pyfp, ", need_weights=True");
+                }
+                else
+                {
+                    fprintf(pyfp, ", need_weights=False");
+                }
+                fprintf(pyfp, ")\n");
+            }
+            //add by senli
+            else if (op->type == "F.max_unpool2d")
+            {
+                /*
+                根据输入和输出的shape，计算kernel_size,stride,padding
+                以下为转换公式
+                    padding = 0
+                    stride = floor ( (output_size / input_size) ) 
+                    kernel_size = output_size − (input_size - 1) * stride 
+                */
+               std::vector<int> inshape =  op->inputs[0]->shape;
+               std::vector<int> outshape =  op->outputs[0]->shape;
+               int ih = inshape[2];
+               int iw = inshape[3];
+               int oh = outshape[2];
+               int ow = outshape[3];
+               int stride_h = std::floor(oh / ih);
+               int stride_w = std::floor(ow / iw);
+               int kernel_size_h = oh - (ih - 1) * stride_h; 
+               int kernel_size_w = ow - (iw - 1) * stride_w; 
+               for (size_t i = 0; i < op->outputs.size(); i++)
+                {
+                    fprintf(pyfp, "v_%s", sanitize_identifier(op->outputs[i]->name).c_str());
+                    if (i + 1 != op->outputs.size())
+                        fprintf(pyfp, ", ");
+                }
+                fprintf(pyfp, " = F.max_unpool2d(");
+                for (size_t i = 0; i < op->inputs.size(); i++)
+                {
+                    fprintf(pyfp, "v_%s, ", sanitize_identifier(op->inputs[i]->name).c_str());
+                }
+                fprintf(pyfp, "kernel_size = (%s,",std::to_string(kernel_size_h).c_str());
+                fprintf(pyfp, "%s), ",std::to_string(kernel_size_w).c_str());
+                fprintf(pyfp, "stride = (%s,",std::to_string(stride_h).c_str());
+                fprintf(pyfp, "%s) ",std::to_string(stride_w).c_str());
+                fprintf(pyfp, ")\n");
+
+            }
+            
+            else if (op->type.substr(0, 3) == "nn." || op->type.substr(0, 16) == "torchvision.ops.")
+            {
+                // self.xxx()
+                for (size_t i = 0; i < op->outputs.size(); i++)
+                {
+                    fprintf(pyfp, "v_%s", sanitize_identifier(op->outputs[i]->name).c_str());
+                    if (i + 1 != op->outputs.size())
+                        fprintf(pyfp, ", ");
+                }
+                fprintf(pyfp, " = self.%s(", sanitize_identifier(op->name).c_str());
+                for (size_t i = 0; i < op->inputs.size(); i++)
+                {
+                    fprintf(pyfp, "v_%s", sanitize_identifier(op->inputs[i]->name).c_str());
+                    if (i + 1 != op->inputs.size())
+                        fprintf(pyfp, ", ");
+                }
+                fprintf(pyfp, ")\n");
+            }
+            else if (op->type.find("::") != std::string::npos || op->type.find(".") != std::string::npos)
+            {
+                // direct
+                for (size_t i = 0; i < op->outputs.size(); i++)
+                {
+                    fprintf(pyfp, "v_%s", sanitize_identifier(op->outputs[i]->name).c_str());
+                    if (i + 1 != op->outputs.size())
+                        fprintf(pyfp, ", ");
+                }
+
+                if (op->type.substr(0, 7) == "Tensor.")
+                {
+                    if (op->type == "Tensor.fill")
+                    {
+                        fprintf(pyfp, " = v_%s.fill_(", sanitize_identifier(op->inputs[0]->name).c_str());
+                    }
+                    else
+                    {
+                        fprintf(pyfp, " = v_%s.%s(", sanitize_identifier(op->inputs[0]->name).c_str(), op->type.substr(7).c_str());
+                    }
+
+                    if (op->inputnames.size() == op->inputs.size())
+                    {
+                        for (size_t i = 1; i < op->inputs.size(); i++)
+                        {
+                            if (!op->inputnames[i].empty())
+                                continue;
+
+                            fprintf(pyfp, "v_%s, ", sanitize_identifier(op->inputs[i]->name).c_str());
+                        }
+
+                        for (size_t i = 1; i < op->inputs.size(); i++)
+                        {
+                            if (op->inputnames[i].empty())
+                                continue;
+
+                            fprintf(pyfp, "%s=v_%s, ", op->inputnames[i].c_str(), sanitize_identifier(op->inputs[i]->name).c_str());
+                        }
+                    }
+                    else
+                    {
+                        for (size_t i = 1; i < op->inputs.size(); i++)
+                        {
+                            fprintf(pyfp, "v_%s, ", sanitize_identifier(op->inputs[i]->name).c_str());
+                        }
+                    }
+                }
+                else
+                {
+                     //add by senli custom_ops_func
+                    if(
+                        std::find(custom_ops.begin(), custom_ops.end(), op->type) != custom_ops.end() && customop_infer_py != "None")
+                    {
+                        std::vector<std::string> op_type_list = split_string(op->type, "."); 
+                        std::reverse(op_type_list.begin(), op_type_list.end()); 
+                        std::string function_name = op_type_list.at(0);
+                        fprintf(pyfp, " = %s(", function_name.c_str());
+                    }
+                    else
+                    {
+                        fprintf(pyfp, " = %s(", op->type.c_str());
+                    }
+
+                    if (op->inputnames.size() == op->inputs.size())
+                    {
+                        for (size_t i = 0; i < op->inputs.size(); i++)
+                        {
+                            if (!op->inputnames[i].empty())
+                                continue;
+
+                            fprintf(pyfp, "v_%s", sanitize_identifier(op->inputs[i]->name).c_str());
+                            if (i + 1 != op->inputs.size())
+                                fprintf(pyfp, ", ");
+                        }
+
+                        for (size_t i = 0; i < op->inputs.size(); i++)
+                        {
+                            if (op->inputnames[i].empty())
+                                continue;
+
+                            fprintf(pyfp, "%s=v_%s", op->inputnames[i].c_str(), sanitize_identifier(op->inputs[i]->name).c_str());
+                            if (i + 1 != op->inputs.size())
+                                fprintf(pyfp, ", ");
+                        }
+                    }
+                    else
+                    {
+                        for (size_t i = 0; i < op->inputs.size(); i++)
+                        {
+                            fprintf(pyfp, "v_%s", sanitize_identifier(op->inputs[i]->name).c_str());
+                            if (i + 1 != op->inputs.size())
+                                fprintf(pyfp, ", ");
+                        }
+                    }
+                }
+
+                int i = 0;
+                for (const auto& it : op->params)
+                {
+                    if (op->type.substr(0, 7) == "Tensor." && i == 0)
+                    {
+                        fprintf(pyfp, "%s=", it.first.c_str());
+                    }
+                    else if (op->inputs.empty() && i == 0)
+                    {
+                        fprintf(pyfp, "%s=", it.first.c_str());
+                    }
+                    else
+                    {
+                        fprintf(pyfp, ", %s=", it.first.c_str());
+                    }
+
+                    i++;
+
+                    const Parameter& param = it.second;
+                    if (param.type == 0)
+                    {
+                        if (op->type == "Tensor.index_put" && it.first == "values")
+                        {
+                            fprintf(pyfp, "torch.tensor(False)");
+                        }
+                        else
+                        {
+                            fprintf(pyfp, "None");
+                        }
+                    }
+                    if (param.type == 1)
+                    {
+                        if (param.b)
+                            fprintf(pyfp, "True");
+                        else
+                            fprintf(pyfp, "False");
+                    }
+                    if (param.type == 2)
+                    {
+                        if (op->type == "Tensor.index_put" && it.first == "values")
+                        {
+                            fprintf(pyfp, "torch.tensor(%d)", param.i);
+                        }
+                        else
+                        {
+                            fprintf(pyfp, "%d", param.i);
+                        }
+                    }
+                    if (param.type == 3)
+                    {
+                        if (op->type == "Tensor.index_put" && it.first == "values")
+                        {
+                            fprintf(pyfp, "torch.tensor(%f)", param.f);
+                        }
+                        else
+                        {
+                            fprintf(pyfp, "%f", param.f);
+                        }
+                    }
+                    if (param.type == 4)
+                    {
+                        if (param.s.substr(0, 6) == "torch.")
+                        {
+                            fprintf(pyfp, "%s", param.s.c_str());
+                        }
+                        else if (op->type == "Tensor.index_put" && it.first == "values")
+                        {
+                            if (param.s == "inf" || param.s == "-inf")
+                            {
+                                fprintf(pyfp, "torch.tensor(float(\'%s\'))", param.s.c_str());
+                            }
+                            else
+                            {
+                                fprintf(pyfp, "torch.tensor(\'%s\')", param.s.c_str());
+                            }
+                        }
+                        else
+                        {
+                            if (param.s == "inf" || param.s == "-inf")
+                            {
+                                fprintf(pyfp, "float(\'%s\')", param.s.c_str());
+                            }
+                            else
+                            {
+                                fprintf(pyfp, "\'%s\'", param.s.c_str());
+                            }
+                        }
+                    }
+                    if (param.type == 5)
+                    {
+                        fprintf(pyfp, "(");
+                        for (size_t i = 0; i < param.ai.size(); i++)
+                        {
+                            if ((op->type == "F.adaptive_avg_pool2d"
+                                    || op->type == "F.adaptive_avg_pool3d"
+                                    || op->type == "F.adaptive_max_pool2d"
+                                    || op->type == "F.adaptive_max_pool3d")
+                                    && it.first == "output_size" && param.ai[i] == 0)
+                            {
+                                fprintf(pyfp, "None");
+                            }
+                            else
+                            {
+                                fprintf(pyfp, "%d", param.ai[i]);
+                            }
+                            if (i + 1 != param.ai.size() || param.ai.size() == 1)
+                                fprintf(pyfp, ",");
+                        }
+                        fprintf(pyfp, ")");
+                    }
+                    if (param.type == 6)
+                    {
+                        fprintf(pyfp, "(");
+                        for (size_t i = 0; i < param.af.size(); i++)
+                        {
+                            fprintf(pyfp, "%f", param.af[i]);
+                            if (i + 1 != param.af.size() || param.af.size() == 1)
+                                fprintf(pyfp, ",");
+                        }
+                        fprintf(pyfp, ")");
+                    }
+                    if (param.type == 7)
+                    {
+                        fprintf(pyfp, "(");
+                        for (size_t i = 0; i < param.as.size(); i++)
+                        {
+                            if (param.as[i].substr(0, 6) == "torch.")
+                            {
+                                fprintf(pyfp, "%s", param.as[i].c_str());
+                            }
+                            else
+                            {
+                                fprintf(pyfp, "\'%s\'", param.as[i].c_str());
+                            }
+                            if (i + 1 != param.as.size() || param.as.size() == 1)
+                                fprintf(pyfp, ",");
+                        }
+                        fprintf(pyfp, ")");
+                    }
+                    if (param.type == 10)
+                    {
+                        fprintf(pyfp, "(%f%+fj)", param.c.real(), param.c.imag());
+                    }
+                    if (param.type == 11)
+                    {
+                        fprintf(pyfp, "(");
+                        for (size_t i = 0; i < param.ac.size(); i++)
+                        {
+                            fprintf(pyfp, "(%f%+fj)", param.ac[i].real(), param.ac[i].imag());
+                            if (i + 1 != param.ac.size() || param.ac.size() == 1)
+                                fprintf(pyfp, ",");
+                        }
+                        fprintf(pyfp, ")");
+                    }
+                }
+
+                fprintf(pyfp, ")\n");
+            }
+            else
+            {
+                fprintf(stderr, "todo %s\n", op->type.c_str());
+            }
+        }
+    }
+
+    // return add by senli[pnnx_infer]
+    fprintf(pyfp, "        if self.infer_flag:\n");
+    {
+        fprintf(pyfp, "            return ");
+
+        int output_count = 0;
+        {
+            for (const Operator* op : ops)
+            {
+                if (op->type == "pnnx.Output")
+                    output_count++;
+            }
+        }
+
+        int output_index = 0;
+        for (const Operator* op : ops)
+        {
+            if (op->type != "pnnx.Output")
+                continue;
+
+            fprintf(pyfp, "v_%s", sanitize_identifier(op->inputs[0]->name).c_str());
+            if (output_index + 1 != output_count)
+                fprintf(pyfp, ", ");
+
+            output_index++;
+        }
+
+        fprintf(pyfp, "\n");
+    }
+    fprintf(pyfp, "        else:\n");
+
+    // return 如果输出的前序节点类型为TupleConstruct， 最大值不加一 add by senli[pnnx_infer]
+    {
+        bool TupleConstruct_flag = false;
+        int max_tensor_index = 0;
+        for (const Operator* op : ops)
+        {
+            if (op->type == "pnnx.Output")
+            {
+                std::vector<Operand*> inputs = op->inputs;
+                for(const Operand* tensor : inputs)
+                {
+                    Operator* pre_op = tensor->producer;
+                    if(pre_op->type == "prim::TupleConstruct")
+                    {
+                        TupleConstruct_flag = true;
+                    }
+                }
+                int num = std::stoi(op->inputs[0]->name);
+                max_tensor_index = (max_tensor_index > num) ? max_tensor_index : num;
+            }
+                
+        }
+        if( !TupleConstruct_flag )
+        {
+            max_tensor_index++;
+        }
+        fprintf(pyfp, "            intermediate = {}\n");
+        fprintf(pyfp, "            for i in range(%d):\n",max_tensor_index);
+        fprintf(pyfp, "                key = 'v_' + str(i)\n");
+        fprintf(pyfp, "                intermediate[str(i)] = vars()[key]\n");
+        fprintf(pyfp, "            return intermediate");
+    }
+
+
+    fprintf(pyfp, "\n");
+
+    // export torchscript
+    {
+        fprintf(pyfp, "def export_torchscript():\n");
+        fprintf(pyfp, "    net = Model()\n");
+        fprintf(pyfp, "    net.eval()\n");
+        fprintf(pyfp, "\n");
+        fprintf(pyfp, "    torch.manual_seed(0)\n");
+
+        std::vector<std::string> input_names;
+        for (const Operator* op : ops)
+        {
+            if (op->type != "pnnx.Input")
+                continue;
+
+            const Operand* r = op->outputs[0];
+            std::string input_name = std::string("v_") + sanitize_identifier(r->name);
+            if (type_is_integer(r->type))
+            {
+                fprintf(pyfp, "    %s = torch.randint(10, (", input_name.c_str());
+                for (size_t i = 0; i < r->shape.size(); i++)
+                {
+                    fprintf(pyfp, "%d", r->shape[i]);
+                    if (i + 1 != r->shape.size() || r->shape.size() == 1)
+                        fprintf(pyfp, ", ");
+                }
+                fprintf(pyfp, "), dtype=%s)\n", type_to_dtype_string(r->type));
+            }
+            else
+            {
+                fprintf(pyfp, "    %s = torch.rand(", input_name.c_str());
+                for (size_t i = 0; i < r->shape.size(); i++)
+                {
+                    fprintf(pyfp, "%d, ", r->shape[i]);
+                }
+                fprintf(pyfp, "dtype=%s)\n", type_to_dtype_string(r->type));
+            }
+
+            input_names.push_back(input_name);
+        }
+
+        fprintf(pyfp, "\n");
+
+        if (input_names.size() == 1)
+        {
+            fprintf(pyfp, "    mod = torch.jit.trace(net, %s)\n", input_names[0].c_str());
+        }
+        else
+        {
+            fprintf(pyfp, "    mod = torch.jit.trace(net, (");
+
+            for (size_t i = 0; i < input_names.size(); i++)
+            {
+                fprintf(pyfp, "%s", input_names[i].c_str());
+                if (i + 1 != input_names.size())
+                    fprintf(pyfp, ", ");
+            }
+
+            fprintf(pyfp, "))\n");
+        }
+
+        fprintf(pyfp, "    mod.save(\"%s.pt\")\n", pypath.c_str());
+    }
+
+    fprintf(pyfp, "\n");
+
+    // export onnx
+    {
+        fprintf(pyfp, "def export_onnx():\n");
+        fprintf(pyfp, "    net = Model()\n");
+        fprintf(pyfp, "    net.eval()\n");
+        fprintf(pyfp, "\n");
+        fprintf(pyfp, "    torch.manual_seed(0)\n");
+
+        std::vector<std::string> input_names;
+        for (const Operator* op : ops)
+        {
+            if (op->type != "pnnx.Input")
+                continue;
+
+            const Operand* r = op->outputs[0];
+            std::string input_name = std::string("v_") + sanitize_identifier(r->name);
+            if (type_is_integer(r->type))
+            {
+                fprintf(pyfp, "    %s = torch.randint(10, (", input_name.c_str());
+                for (size_t i = 0; i < r->shape.size(); i++)
+                {
+                    fprintf(pyfp, "%d", r->shape[i]);
+                    if (i + 1 != r->shape.size() || r->shape.size() == 1)
+                        fprintf(pyfp, ", ");
+                }
+                fprintf(pyfp, "), dtype=%s)\n", type_to_dtype_string(r->type));
+            }
+            else
+            {
+                fprintf(pyfp, "    %s = torch.rand(", input_name.c_str());
+                for (size_t i = 0; i < r->shape.size(); i++)
+                {
+                    fprintf(pyfp, "%d, ", r->shape[i]);
+                }
+                fprintf(pyfp, "dtype=%s)\n", type_to_dtype_string(r->type));
+            }
+
+            input_names.push_back(input_name);
+        }
+
+        fprintf(pyfp, "\n");
+
+        // torch.onnx._export(net, v_0, "test_swin_t.onnx", export_params=True, opset_version=14, input_names=['in0'], output_names=['out0'])
+
+        if (input_names.size() == 1)
+        {
+            fprintf(pyfp, "    torch.onnx._export(net, %s", input_names[0].c_str());
+        }
+        else
+        {
+            fprintf(pyfp, "    torch.onnx._export(net, (");
+
+            for (size_t i = 0; i < input_names.size(); i++)
+            {
+                fprintf(pyfp, "%s", input_names[i].c_str());
+                if (i + 1 != input_names.size())
+                    fprintf(pyfp, ", ");
+            }
+
+            fprintf(pyfp, ")");
+        }
+
+        fprintf(pyfp, ", \"%s.onnx\", export_params=True, operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK, opset_version=13", pypath.c_str());
+
+        fprintf(pyfp, ", input_names=[");
+        {
+            int input_count = 0;
+            {
+                for (const Operator* op : ops)
+                {
+                    if (op->type == "pnnx.Input")
+                        input_count++;
+                }
+            }
+
+            int input_index = 0;
+            for (const Operator* op : ops)
+            {
+                if (op->type != "pnnx.Input")
+                    continue;
+
+                fprintf(pyfp, "'in%d'", input_index);
+                if (input_index + 1 != input_count)
+                    fprintf(pyfp, ", ");
+
+                input_index++;
+            }
+        }
+        fprintf(pyfp, "]");
+
+        fprintf(pyfp, ", output_names=[");
+        {
+            int output_count = 0;
+            {
+                for (const Operator* op : ops)
+                {
+                    if (op->type == "pnnx.Output")
+                        output_count++;
+                }
+            }
+
+            int output_index = 0;
+            for (const Operator* op : ops)
+            {
+                if (op->type != "pnnx.Output")
+                    continue;
+
+                fprintf(pyfp, "'out%d'", output_index);
+                if (output_index + 1 != output_count)
+                    fprintf(pyfp, ", ");
+
+                output_index++;
+            }
+        }
+        fprintf(pyfp, "]");
+
+        fprintf(pyfp, ")\n");
+    }
+
+    fprintf(pyfp, "\n");
+
+    // test inference
+    //add by senli[pnnx_infer]
+    {
+        fprintf(pyfp, "def test_inference(bin_path, flag,args):\n");
+        fprintf(pyfp, "    net = Model(bin_path,flag)\n");
+        fprintf(pyfp, "    net.eval()\n");
+        fprintf(pyfp, "    if isinstance(args, tuple) or isinstance(args, list):\n");
+        fprintf(pyfp, "        return net(*args)\n");
+        fprintf(pyfp, "    else:\n");
+        fprintf(pyfp, "        return net(args)\n");
+        // fprintf(pyfp, "    torch.manual_seed(0)\n");
+
+        // std::vector<std::string> input_names;
+        // for (const Operator* op : ops)
+        // {
+        //     if (op->type != "pnnx.Input")
+        //         continue;
+
+        //     const Operand* r = op->outputs[0];
+        //     std::string input_name = std::string("v_") + sanitize_identifier(r->name);
+        //     if (type_is_integer(r->type))
+        //     {
+        //         fprintf(pyfp, "    %s = torch.randint(10, (", input_name.c_str());
+        //         for (size_t i = 0; i < r->shape.size(); i++)
+        //         {
+        //             fprintf(pyfp, "%d", r->shape[i]);
+        //             if (i + 1 != r->shape.size() || r->shape.size() == 1)
+        //                 fprintf(pyfp, ", ");
+        //         }
+        //         fprintf(pyfp, "), dtype=%s)\n", type_to_dtype_string(r->type));
+        //     }
+        //     else
+        //     {
+        //         fprintf(pyfp, "    %s = torch.rand(", input_name.c_str());
+        //         for (size_t i = 0; i < r->shape.size(); i++)
+        //         {
+        //             fprintf(pyfp, "%d, ", r->shape[i]);
+        //         }
+        //         fprintf(pyfp, "dtype=%s)\n", type_to_dtype_string(r->type));
+        //     }
+
+        //     input_names.push_back(input_name);
+        // }
+
+        // fprintf(pyfp, "\n");
+
+        // if (input_names.size() == 1)
+        // {
+        //     fprintf(pyfp, "    return net(%s)\n", input_names[0].c_str());
+        // }
+        // else
+        // {
+        //     fprintf(pyfp, "    return net(");
+
+        //     for (size_t i = 0; i < input_names.size(); i++)
+        //     {
+        //         fprintf(pyfp, "%s", input_names[i].c_str());
+        //         if (i + 1 != input_names.size())
+        //             fprintf(pyfp, ", ");
+        //     }
+
+        //     fprintf(pyfp, ")\n");
+        // }
+    }
+
+    fprintf(pyfp, "\n");
+
+    // main
+    {
+        fprintf(pyfp, "if __name__ == \"__main__\":\n");
+        fprintf(pyfp, "    print(test_inference())\n");
+    }
+
+    fclose(pyfp);
+
+    return 0;
+}
+
+
 
 int Graph::parse(const std::string& param)
 {
