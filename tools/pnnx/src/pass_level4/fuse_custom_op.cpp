@@ -41,15 +41,13 @@ void fuse_custom_op(Graph& graph, std::set<std::string>& custom_ops)
             if (op_type_namespace == "aten" || op_type_namespace == "prim")
                 continue;
 
-            custom_ops.insert(op->type);
-
             std::string op_type_name = op->type.substr(op->type.find_last_of(':') + 1);
 
             need_fuse = true;
             //add by senli
             // op->type = std::string("pnnx.custom_op.") + op_type_namespace + '.' + op_type_name;
             op->type = std::string("torch.ops.") + op_type_namespace + '.' + op_type_name;
-
+            custom_ops.insert(op->type);
             std::vector<Operand*> new_inputs;
             std::vector<std::string> new_inputnames;
             for (size_t j = 0; j < op->inputs.size(); j++)
