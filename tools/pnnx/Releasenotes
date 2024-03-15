@@ -1,0 +1,6 @@
+dev.1.0.1.20240315
+1. support max_unpool
+2. add infer py for compiler
+3. support custom op infer 
+4. replace custom op infer with py
+5. synchronize pnnx for fix pnnx convert torch.stack negative dim

@@ -1,3 +1,0 @@
-1.20240315
-1.1 修改ptx插入python infer的bug
-1.2 同步ncnn库，fix pnnx convert torch.stack negative dim
