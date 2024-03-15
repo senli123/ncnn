@@ -2684,6 +2684,7 @@ int insert_function(FILE* pyfp, std::vector<std::string>& custom_ops_names, std:
        fprintf(pyfp, "%s", (line1 + "\n").c_str());
    
     } 
+    
     return 1;
 }
 
@@ -2743,6 +2744,7 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,\
             return -1;
         }
     }
+    fprintf(pyfp, "\n");
     
     //add by senli[pnnx_infer]
     fprintf(pyfp, "class Model(nn.Module):\n");
@@ -3054,6 +3056,7 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,\
         }
         fprintf(pyfp, "]\n");
     }
+    fprintf(pyfp, "\n");
     // utility function
     {
         fprintf(pyfp, "    def load_pnnx_bin_as_parameter(self, archive, key, shape, dtype, requires_grad=True):\n");
@@ -3777,7 +3780,7 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,\
         fprintf(pyfp, "            for i in range(%d):\n",max_tensor_index);
         fprintf(pyfp, "                key = 'v_' + str(i)\n");
         fprintf(pyfp, "                intermediate[str(i)] = vars()[key]\n");
-        fprintf(pyfp, "            return intermediate");
+        fprintf(pyfp, "            return intermediate\n");
     }
 
 
@@ -3972,7 +3975,7 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,\
     // test inference
     //add by senli[pnnx_infer]
     {
-        fprintf(pyfp, "def test_inference(bin_path, flag,args):\n");
+        fprintf(pyfp, "def test_inference(bin_path, flag, args):\n");
         fprintf(pyfp, "    net = Model(bin_path,flag)\n");
         fprintf(pyfp, "    net.eval()\n");
         fprintf(pyfp, "    if isinstance(args, tuple) or isinstance(args, list):\n");

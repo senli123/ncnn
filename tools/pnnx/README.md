@@ -674,3 +674,58 @@ TORCH_LIBRARY(upfirdn2d_op, m) {
 |---------------------------|----|
 |nn.MaxUnpool2d         | :heavy_check_mark: | 
 
+
+# 调试技巧
+采用attach的方式在python中调试c++，在.vscode下的launch.json配置如下
+```json
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+    {
+        "name": "(gdb) 附加",
+        "type": "cppdbg",
+        "request": "attach",
+        // linux program
+        "program": "/usr/bin/python3.8",
+        // win program
+        //"program": "C:/Users/nvp/AppData/Local/Programs/Python/Python38/python.exe",
+        "processId": "${command:pickProcess}",
+        "MIMode": "gdb",
+        // linux gdb
+        "miDebuggerPath": "/usr/bin/gdb",
+        // win gdb
+        //    "miDebuggerPath": "C:/Users/nvp/AppData/Local/Android/Sdk/ndk/21.4.7075529/prebuilt/windows-x86_64/bin/gdb.exe",
+        "setupCommands": [
+            {
+                "description": "为 gdb 启用整齐打印",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+            }
+        ]
+    },
+        {
+            "name": "Python: 当前文件",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        }
+    ]
+}
+```
+# 添加自定义算子实例
+在 mytests文件夹下添加了自定义算子实例，可以参考
+|op_name|path|
+|---|---|
+|ReduceL2|my_tests/test_ReduceL2|
+
+# debug模式编译
+将python/setup.py中的第51行添加self.debug = True
+
+```shell
+cd python
+python setup.py install
+```

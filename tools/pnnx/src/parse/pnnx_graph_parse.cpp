@@ -46,7 +46,7 @@ const std::string& custom_op_py)
          
     }
 
-    if (custom_op_py == "None")
+    if (custom_op_py != "None")
     {
         //insert custom_op_py
         std::string custom_op_py_info = "customop_infer_py=" + custom_op_py; 
