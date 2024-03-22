@@ -3828,7 +3828,7 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,\
     }
     fprintf(pyfp, "        else:\n");
 
-    // return 如果输出的前序节点类型为TupleConstruct， 最大值不加一 add by senli[pnnx_infer]
+    // return if pre node type is TupleConstruct， max_tensor_index not add one add by senli[pnnx_infer]
     {
         bool TupleConstruct_flag = false;
         int max_tensor_index = 0;

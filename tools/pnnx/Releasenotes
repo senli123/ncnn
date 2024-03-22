@@ -1,12 +1,13 @@
 dev.1.0.1.20240315
-1. support max_unpool
-2. add infer py for compiler
-3. support custom op infer 
-4. replace custom op infer with py
-5. synchronize pnnx for fix pnnx convert torch.stack negative dim
+1. Support max_unpool
+2. Add infer py for compiler
+3. Aupport custom op infer 
+4. Replace custom op infer with py
+5. Synchronize pnnx for fix pnnx convert torch.stack negative dim
 
 dev.1.0.2.20240322
-1. ignore ncnn pass
-2. add eliminate_ListUnpack and trans_expression2TupleConstruct in pass_level6
-3. update infer_py for load custom op infer
-4. update parallel = 8 to accelerate compile
+1. Ignore ncnn pass
+2. In the case of multiple outputs, eliminate the op of type ListUnpack in pass_level6
+3. Trans op type of expression list to TupleConstruct in pass_level6
+4. Update infer_py for load custom op infer
+5. Set parallel = 8 to accelerate compile

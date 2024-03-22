@@ -34,9 +34,9 @@ void eliminate_ListUnpack(Graph& graph)
 
             // delete noop-like prim::ListUnpack
             matched = true;
-            Operand* ListUnpack_input = op->inputs[0]; // 得到该节点的输入
-            std::vector<Operand*> ListUnpack_output = op->outputs; //得到该节点的输出
-            Operator* pre_node = ListUnpack_input->producer; //得到前序节点
+            Operand* ListUnpack_input = op->inputs[0]; //  get cur node input
+            std::vector<Operand*> ListUnpack_output = op->outputs; // get cur node output
+            Operator* pre_node = ListUnpack_input->producer; //get pre node 
             pre_node->outputs.clear();
             for(auto& single_out: ListUnpack_output)
             {
