@@ -42,6 +42,8 @@ class CMakeExtension(Extension):
 
 class CMakeBuild(build_ext):
     def build_extension(self, ext):
+        #add by senli
+        self.parallel = 8
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         extdir = os.path.join(extdir, "pnnx")
 
@@ -111,7 +113,7 @@ class CMakeBuild(build_ext):
                 # CMake 3.12+ only.
                 build_args += ["-j{}".format(self.parallel)]
             else:
-                build_args += ["-j2"]
+                build_args += ["-j8"]
 
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)

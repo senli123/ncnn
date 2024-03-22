@@ -24,7 +24,7 @@
 #include "pass_level3.h"
 #include "pass_level4.h"
 #include "pass_level5.h"
-
+#include "pass_level6.h"
 #if BUILD_TORCH2PNNX
 #include "load_torchscript.h"
 #endif
@@ -310,8 +310,9 @@ int main(int argc, char** argv)
         fprintf(stderr, "\n");
         fprintf(stderr, "moduleop = ");
         print_string_list(module_operators);
+        fprintf(stderr, "\n");
         // add by senli
-        fprintf(stderr, "customop_infer_py = %d\n", customop_infer_py);
+        fprintf(stderr, "customop_infer_py = %s\n", customop_infer_py.c_str());
         fprintf(stderr, "\n");
     }
 
@@ -356,6 +357,11 @@ int main(int argc, char** argv)
         fprintf(stderr, "############# pass_level5\n");
 
         pnnx::pass_level5(pnnx_graph, foldable_constants, foldable_constants_zippath);
+
+         // add by senli 20240321
+        fprintf(stderr, "############# pass_level6\n");
+
+        pnnx::pass_level6(pnnx_graph, foldable_constants, foldable_constants_zippath);
     }
 
     // delete foldable_constants_zippath
@@ -375,13 +381,13 @@ int main(int argc, char** argv)
 #endif
 
     //     if (optlevel >= 2)
-    {
-        fprintf(stderr, "############# pass_ncnn\n");
+    // {
+    //     fprintf(stderr, "############# pass_ncnn\n");
 
-        pnnx::pass_ncnn(pnnx_graph, module_operators);
+    //     pnnx::pass_ncnn(pnnx_graph, module_operators);
 
-        pnnx::save_ncnn(pnnx_graph, ncnnparampath, ncnnbinpath, ncnnpypath, fp16);
-    }
+    //     pnnx::save_ncnn(pnnx_graph, ncnnparampath, ncnnbinpath, ncnnpypath, fp16);
+    // }
 
     //     pnnx::Graph pnnx_graph2;
 

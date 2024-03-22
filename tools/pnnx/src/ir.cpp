@@ -2688,6 +2688,48 @@ int insert_function(FILE* pyfp, std::vector<std::string>& custom_ops_names, std:
     return 1;
 }
 
+// add by senli get all custom_op_names 20240320
+int get_custom_op_names(std::string& customop_infer_py, std::vector<std::string>& custom_ops_names)
+{
+    std::ifstream file(customop_infer_py); 
+    
+    if (!file) {  
+        std::cout << "can not open customop_infer_py" << std::endl;  
+        return -1;  
+    }  
+  
+    std::string line;  
+  
+    std::regex functionStartRegex(R"(\s*def\s+(\w+)\s*\(.*\):)");    
+    std::smatch match;  
+  
+    while (std::getline(file, line)) {  
+        
+        if (std::regex_search(line, match, functionStartRegex)) { 
+            custom_ops_names.push_back(match[1]);
+        } 
+    }  
+  
+    file.close(); 
+    return 1;
+}
+
+// add by senli 20240320 get Directory and file_name of customop_infer_py 
+std::vector<std::string> getDirectoryPath(const std::string& filePath) { 
+    std::vector<std::string> customop_infer_py_info;
+    size_t found = filePath.find_last_of("/\\");  
+    if (found != std::string::npos) {  
+        std::string Directory = filePath.substr(0, found);
+        customop_infer_py_info.push_back(Directory);   
+        std::string file_name = filePath.substr(found+1); 
+        size_t dotPosition = file_name.rfind('.'); // 从后向前查找最后一个点  
+        if (dotPosition != std::string::npos) {  
+            customop_infer_py_info.push_back(file_name.substr(0, dotPosition));   
+        } 
+    }  
+    return customop_infer_py_info;  
+}
+
 int Graph::python_infer(const std::string& pypath, const std::string& binpath,\
      const std::vector<std::string>& customop_modules,  std::set<std::string>& custom_ops,\
      std::string& customop_infer_py)
@@ -2700,6 +2742,7 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,\
     }
 
     fprintf(pyfp, "import os\n");
+    fprintf(pyfp, "import sys\n");
     fprintf(pyfp, "import numpy as np\n");
     fprintf(pyfp, "import tempfile, zipfile\n");
     fprintf(pyfp, "import torch\n");
@@ -2711,13 +2754,15 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,\
     fprintf(pyfp, "    pass\n");
 
     fprintf(pyfp, "\n");
+    //add by senli import customop_infer_py 20240320
+    std::vector<std::string> custom_ops_names;
     //add by senli 2024015 load custom_op lib
     if (customop_infer_py == "None")
     {
         for (auto m : customop_modules)
         {
             #ifdef _WIN32  
-                fprintf(pyfp, "torch.ops.load_library(r'%s", m.c_str());
+                fprintf(pyfp, "torch.ops.load_library('%s", m.c_str());
             #elif defined(__linux__)  
                 fprintf(pyfp, "torch.ops.load_library('%s", m.c_str());
             #elif defined(__APPLE__)  
@@ -2729,20 +2774,44 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,\
     }
     else
     {
-        // add by senli insert custom_op_infer
-        std::vector<std::string> custom_ops_names;
-        for (const auto& custom_op : custom_ops) {  
-            std::vector<std::string> tokens = split_string(custom_op, "."); 
-            std::reverse(tokens.begin(), tokens.end()); 
-            std::string custom_op_name = tokens.at(0);
-            custom_ops_names.push_back(custom_op_name);
-        }  
-        int insert_flag = insert_function(pyfp, custom_ops_names, customop_infer_py);
+       // add by senli insert custom_op_infer
+        // std::vector<std::string> custom_ops_names;
+        // for (const auto& custom_op : custom_ops) {  
+        //     std::vector<std::string> tokens = split_string(custom_op, "."); 
+        //     std::reverse(tokens.begin(), tokens.end()); 
+        //     std::string custom_op_name = tokens.at(0);
+        //     custom_ops_names.push_back(custom_op_name);
+        // }  
+        // int insert_flag = insert_function(pyfp, custom_ops_names, customop_infer_py);
+        // if(insert_flag == -1)
+        // {
+        //     std::cerr << "please check th path of customop_infer_py" << std::endl;  
+        //     return -1;
+        // }
+
+        //add by senli import customop_infer_py 20240320
+        int insert_flag  = get_custom_op_names(customop_infer_py, custom_ops_names);
         if(insert_flag == -1)
         {
-            std::cerr << "please check th path of customop_infer_py" << std::endl;  
+            std::cerr << "failed in  get_custom_op_names" << std::endl;  
             return -1;
         }
+        std::vector<std::string> customop_infer_py_info = getDirectoryPath(customop_infer_py);
+        if (customop_infer_py_info.size() == 0 || customop_infer_py_info.size() == 1)
+        {
+            std::cerr << "please check th path of customop_infer_py" << std::endl; 
+            return -1;
+        }
+        #ifdef _WIN32  
+            fprintf(pyfp, "sys.path.append('%s", customop_infer_py_info[0].c_str());
+        #elif defined(__linux__)  
+            fprintf(pyfp, "sys.path.append('%s", customop_infer_py_info[0].c_str());
+        #elif defined(__APPLE__)  
+            fprintf(pyfp, "sys.path.append('%s", customop_infer_py_info[0].c_str());
+        #endif
+        fprintf(pyfp, "')\n");
+        fprintf(pyfp, "from %s import *\n", customop_infer_py_info[1].c_str());
+    
     }
     fprintf(pyfp, "\n");
     
@@ -3514,7 +3583,16 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,\
                         std::vector<std::string> op_type_list = split_string(op->type, "."); 
                         std::reverse(op_type_list.begin(), op_type_list.end()); 
                         std::string function_name = op_type_list.at(0);
-                        fprintf(pyfp, " = %s(", function_name.c_str());
+                        //add by senli 20240320 
+                        if (std::find(custom_ops_names.begin(), custom_ops_names.end(), function_name) != custom_ops_names.end())
+                        {
+                            fprintf(pyfp, " = %s(", function_name.c_str());
+                        }else
+                        {
+                            fprintf(pyfp, " = %s(", op->type.c_str());
+                        }
+
+
                     }
                     else
                     {
@@ -3779,7 +3857,8 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,\
         fprintf(pyfp, "            intermediate = {}\n");
         fprintf(pyfp, "            for i in range(%d):\n",max_tensor_index);
         fprintf(pyfp, "                key = 'v_' + str(i)\n");
-        fprintf(pyfp, "                intermediate[str(i)] = vars()[key]\n");
+        fprintf(pyfp, "                if key in vars().keys():\n");
+        fprintf(pyfp, "                    intermediate[str(i)] = vars()[key]\n");
         fprintf(pyfp, "            return intermediate\n");
     }
 

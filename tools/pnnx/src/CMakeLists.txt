@@ -376,6 +376,12 @@ set(pnnx_pass_level5_SRCS
     pass_level5/unroll_rnn_op.cpp
 )
 
+# add by senli 20240321
+set(pnnx_pass_level6_SRCS
+    pass_level6/eliminate_ListUnpack.cpp
+    pass_level6/trans_expression2TupleConstruct.cpp
+)
+
 set(pnnx_pass_ncnn_SRCS
     pass_ncnn/convert_attribute.cpp
     pass_ncnn/convert_custom_op.cpp
@@ -673,12 +679,14 @@ set(pnnx_SRCS
     pass_level3.cpp
     pass_level4.cpp
     pass_level5.cpp
+    pass_level6.cpp
 
     ${pnnx_pass_level2_SRCS}
     ${pnnx_pass_level3_SRCS}
     ${pnnx_pass_level4_SRCS}
     ${pnnx_pass_level5_SRCS}
-
+    ${pnnx_pass_level6_SRCS}
+    
     pass_ncnn.cpp
     save_ncnn.cpp
     ${pnnx_pass_ncnn_SRCS}

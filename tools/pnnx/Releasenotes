@@ -4,3 +4,9 @@ dev.1.0.1.20240315
 3. support custom op infer 
 4. replace custom op infer with py
 5. synchronize pnnx for fix pnnx convert torch.stack negative dim
+
+dev.1.0.2.20240322
+1. ignore ncnn pass
+2. add eliminate_ListUnpack and trans_expression2TupleConstruct in pass_level6
+3. update infer_py for load custom op infer
+4. update parallel = 8 to accelerate compile
