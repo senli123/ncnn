@@ -2761,8 +2761,9 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,\
     {
         for (auto m : customop_modules)
         {
+             
             #ifdef _WIN32  
-                fprintf(pyfp, "torch.ops.load_library('%s", m.c_str());
+                fprintf(pyfp, "torch.ops.load_library(r'%s", m.c_str());
             #elif defined(__linux__)  
                 fprintf(pyfp, "torch.ops.load_library('%s", m.c_str());
             #elif defined(__APPLE__)  
@@ -2803,7 +2804,7 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,\
             return -1;
         }
         #ifdef _WIN32  
-            fprintf(pyfp, "sys.path.append('%s", customop_infer_py_info[0].c_str());
+            fprintf(pyfp, "sys.path.append(r'%s", customop_infer_py_info[0].c_str());
         #elif defined(__linux__)  
             fprintf(pyfp, "sys.path.append('%s", customop_infer_py_info[0].c_str());
         #elif defined(__APPLE__)  
@@ -2811,7 +2812,6 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,\
         #endif
         fprintf(pyfp, "')\n");
         fprintf(pyfp, "from %s import *\n", customop_infer_py_info[1].c_str());
-    
     }
     fprintf(pyfp, "\n");
     
@@ -3925,7 +3925,13 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,\
             fprintf(pyfp, "))\n");
         }
 
-        fprintf(pyfp, "    mod.save(\"%s.pt\")\n", pypath.c_str());
+        #ifdef _WIN32  
+            fprintf(pyfp, "    mod.save(r\"%s.pt\")\n", pypath.c_str());
+        #elif defined(__linux__)  
+           fprintf(pyfp, "    mod.save(\"%s.pt\")\n", pypath.c_str());
+        #elif defined(__APPLE__)  
+            fprintf(pyfp, "    mod.save(\"%s.pt\")\n", pypath.c_str());
+        #endif
     }
 
     fprintf(pyfp, "\n");
@@ -3992,7 +3998,13 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,\
             fprintf(pyfp, ")");
         }
 
-        fprintf(pyfp, ", \"%s.onnx\", export_params=True, operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK, opset_version=13", pypath.c_str());
+        #ifdef _WIN32  
+            fprintf(pyfp, ", r\"%s.onnx\", export_params=True, operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK, opset_version=13", pypath.c_str());
+        #elif defined(__linux__)  
+            fprintf(pyfp, ", \"%s.onnx\", export_params=True, operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK, opset_version=13", pypath.c_str());
+        #elif defined(__APPLE__)  
+            fprintf(pyfp, ", \"%s.onnx\", export_params=True, operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK, opset_version=13", pypath.c_str());
+        #endif
 
         fprintf(pyfp, ", input_names=[");
         {

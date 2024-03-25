@@ -11,3 +11,6 @@ dev.1.0.2.20240322
 3. Trans op type of expression list to TupleConstruct in pass_level6
 4. Update infer_py for load custom op infer
 5. Set parallel = 8 to accelerate compile
+
+dev.1.0.3.20240325
+1. Escaping Windows Paths 
