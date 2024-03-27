@@ -703,8 +703,16 @@ list(APPEND SRCS ${SRC_PARSE_FILES})
 list(APPEND HDRS ${HDR_PARSE_FILES})
 
 include_directories(${TORCH_INCLUDE_DIRS})
-pybind11_add_module(ptx ${pnnx_SRCS} ${SRCS} ${HDRS} py_proj.cpp)
 
+add_library(ptx SHARED ${pnnx_SRCS} ${SRCS} ${HDRS} py_proj.cpp) 
+target_link_libraries(ptx ${PYTHON3_LIBRARIES})
+set_target_properties(ptx PROPERTIES PREFIX "")  
+  
+# set extension  
+set_target_properties(ptx PROPERTIES  
+  OUTPUT_NAME "ptx"  
+  SUFFIX "${PYTHON_EXTENSION_SUFFIX}"  
+)
 set_property(SOURCE main.cpp APPEND PROPERTY COMPILE_DEFINITIONS BUILD_TORCH2PNNX)
 target_link_libraries(ptx PRIVATE torch2pnnx)
 

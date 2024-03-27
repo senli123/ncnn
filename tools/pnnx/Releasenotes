@@ -14,3 +14,6 @@ dev.1.0.2.20240322
 
 dev.1.0.3.20240325
 1. Escaping Windows Paths 
+
+dev.1.0.4.20240327
+1. Replacing the native pybind11 with Python's pybind11 to avoid compilation failure of release libraries on Linux

@@ -1,4 +1,4 @@
-set(CMAKE_CXX_FLAGS "-fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 if(NOT CMAKE_VERSION VERSION_LESS "3.15")
     # enable CMAKE_MSVC_RUNTIME_LIBRARY
     cmake_policy(SET CMP0091 NEW)
@@ -38,6 +38,12 @@ option(PNNX_COVERAGE "build for coverage" OFF)
 set(TorchVision_DIR "${TorchVision_INSTALL_DIR}/share/cmake/TorchVision")
 
 find_package(Python3 COMPONENTS Interpreter Development)
+if (WIN32)
+    set(PYTHON_EXTENSION_SUFFIX ".pyd")
+else()
+    set(PYTHON_EXTENSION_SUFFIX ".so")
+endif()
+message(STATUS "Python extension suffix: ${PYTHON_EXTENSION_SUFFIX}") 
 
 PNNXProbeForPyTorchInstall()
 find_package(Torch REQUIRED)
@@ -114,7 +120,6 @@ endif()
 # message(STATUS "onnxruntime_VERSION_MAJOR = ${onnxruntime_VERSION_MAJOR}")
 # message(STATUS "onnxruntime_VERSION_MINOR = ${onnxruntime_VERSION_MINOR}")
 # message(STATUS "onnxruntime_VERSION_PATCH = ${onnxruntime_VERSION_PATCH}")
-add_subdirectory(pybind11)
 add_subdirectory(src)
 
 enable_testing()
