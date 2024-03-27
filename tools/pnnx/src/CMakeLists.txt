@@ -705,7 +705,7 @@ list(APPEND HDRS ${HDR_PARSE_FILES})
 include_directories(${TORCH_INCLUDE_DIRS})
 
 add_library(ptx SHARED ${pnnx_SRCS} ${SRCS} ${HDRS} py_proj.cpp) 
-target_link_libraries(ptx ${PYTHON3_LIBRARIES})
+target_link_libraries(ptx PRIVATE ${Python3_LIBRARIES})
 set_target_properties(ptx PROPERTIES PREFIX "")  
   
 # set extension  

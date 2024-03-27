@@ -38,6 +38,8 @@ option(PNNX_COVERAGE "build for coverage" OFF)
 set(TorchVision_DIR "${TorchVision_INSTALL_DIR}/share/cmake/TorchVision")
 
 find_package(Python3 COMPONENTS Interpreter Development)
+message(STATUS "Python3_INCLUDE_DIRS: ${Python3_INCLUDE_DIRS}") 
+message(STATUS "Python3_LIBRARIES: ${Python3_LIBRARIES}") 
 if (WIN32)
     set(PYTHON_EXTENSION_SUFFIX ".pyd")
 else()
