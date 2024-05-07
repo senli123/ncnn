@@ -608,6 +608,10 @@ add_library(torch2pnnx OBJECT ${torch2pnnx_SRCS})
 target_compile_definitions(torch2pnnx PRIVATE BUILD_TORCH2PNNX)
 target_compile_options(torch2pnnx PUBLIC "${TORCH_CXX_FLAGS}")
 
+if(WIN32)
+    target_compile_definitions(torch2pnnx PUBLIC NOMINMAX)
+endif()
+
 if(TorchVision_FOUND)
     set_property(SOURCE load_torchscript.cpp APPEND PROPERTY COMPILE_DEFINITIONS PNNX_TORCHVISION)
 endif()
