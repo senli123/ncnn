@@ -17,16 +17,12 @@
 #include "pass_level6/eliminate_ListUnpack.h"
 #include "pass_level6/trans_expression2TupleConstruct.h"
 
-
 namespace pnnx {
 
 void pass_level6(Graph& g, const std::set<std::string>& foldable_constants, const std::string& foldable_constants_zippath)
 {
     eliminate_ListUnpack(g);
     trans_expression2TupleConstruct(g);
-    
-
-    
 }
 
 } // namespace pnnx

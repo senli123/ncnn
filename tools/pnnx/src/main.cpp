@@ -186,7 +186,6 @@ static void show_usage()
 #else
     fprintf(stderr, "  customop_infer_py=/home/nihui/.cache/torch_extensions/fused/fused.py\n");
 #endif
-
 }
 
 int main(int argc, char** argv)
@@ -213,7 +212,7 @@ int main(int argc, char** argv)
     std::string pnnxparampath = ptbase + ".pnnx.param";
     std::string pnnxbinpath = ptbase + ".pnnx.bin";
     std::string pnnxpypath = ptbase + "_pnnx.py";
-     // add by senli[pnnx_infer]
+    // add by senli[pnnx_infer]
     std::string pnnxinferpath = ptbase + "_pnnx_infer.py";
     std::string pnnxonnxpath = ptbase + ".pnnx.onnx";
     std::string ncnnparampath = ptbase + ".ncnn.param";
@@ -280,7 +279,7 @@ int main(int argc, char** argv)
         if (strcmp(key, "moduleop") == 0)
             parse_string_list(value, module_operators);
         // add by senli
-         if (strcmp(key, "customop_infer_py") == 0)
+        if (strcmp(key, "customop_infer_py") == 0)
             customop_infer_py = value;
     }
 
@@ -358,7 +357,7 @@ int main(int argc, char** argv)
 
         pnnx::pass_level5(pnnx_graph, foldable_constants, foldable_constants_zippath);
 
-         // add by senli 20240321
+        // add by senli 20240321
         fprintf(stderr, "############# pass_level6\n");
 
         pnnx::pass_level6(pnnx_graph, foldable_constants, foldable_constants_zippath);
@@ -372,7 +371,6 @@ int main(int argc, char** argv)
     pnnx_graph.python(pnnxpypath, pnnxbinpath);
     //add by senli[pnnx_infer]
     pnnx_graph.python_infer(pnnxinferpath, pnnxbinpath, customop_modules, custom_ops, customop_infer_py);
-
 
 #if BUILD_PNNX2ONNX
     pnnx::save_onnx(pnnx_graph, pnnxonnxpath.c_str(), fp16);

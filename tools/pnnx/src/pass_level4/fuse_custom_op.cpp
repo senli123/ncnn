@@ -72,7 +72,7 @@ void fuse_custom_op(Graph& graph, std::set<std::string>& custom_ops)
                 }
                 else if (arg->type == "pnnx.Expression")
                 {
-                     //add by senli
+                    //add by senli
                     // op->params[std::string("arg_") + std::to_string(j)] = Parameter::parse_from_string(arg->params["expr"].s);
                     op->params[std::string("_") + std::to_string(j)] = Parameter::parse_from_string(arg->params["expr"].s);
                     op->inputs[j]->remove_consumer(op);

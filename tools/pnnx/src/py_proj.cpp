@@ -3,9 +3,9 @@
 #include <pybind11/stl.h>
 #include "parse/pnnx_graph_parse.h"
 // #include <torch/extension.h>
-#define STRINGIFY(x) #x
+#define STRINGIFY(x)       #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
-#define MYLIBRARY_VERSION "dev.1.0.4.20240327"
+#define MYLIBRARY_VERSION  "dev.1.0.4.20240327"
 using namespace pnnx_graph;
 using namespace pnnx_ir;
 namespace py = pybind11;
@@ -17,7 +17,8 @@ namespace py = pybind11;
 // {};
 // class PyOperand:public pnnx::Operand
 // {};
-PYBIND11_MODULE(ptx, m) {
+PYBIND11_MODULE(ptx, m)
+{
     m.doc() = R"pbdoc(
         nvppnnx
         -----------------------
@@ -71,17 +72,16 @@ PYBIND11_MODULE(ptx, m) {
     //add PnnxGraph class
     py::class_<PnnxGraph>(m, "PnnxGraph")
     .def(py::init<>())
-    .def("getNvpPnnxModel",&PnnxGraph::getNvpPnnxModel)
+    .def("getNvpPnnxModel", &PnnxGraph::getNvpPnnxModel)
     .def("loadModel", &PnnxGraph::loadModel)
-    .def("getOperators",  (std::vector<Operator>(PnnxGraph::*)())&PnnxGraph::getOperators)
+    .def("getOperators", (std::vector<Operator>(PnnxGraph::*)()) & PnnxGraph::getOperators)
     .def("getOperands", &PnnxGraph::getOperands, py::return_value_policy::reference_internal)
     .def("getInputOps", &PnnxGraph::getInputOps, py::return_value_policy::reference_internal)
     .def("getOutputOps", &PnnxGraph::getOutputOps, py::return_value_policy::reference_internal);
 
-
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
 #else
-    m.attr("__version__") =  MYLIBRARY_VERSION;
+    m.attr("__version__") = MYLIBRARY_VERSION;
 #endif
 }

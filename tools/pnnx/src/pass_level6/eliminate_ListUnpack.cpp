@@ -34,11 +34,11 @@ void eliminate_ListUnpack(Graph& graph)
 
             // delete noop-like prim::ListUnpack
             matched = true;
-            Operand* ListUnpack_input = op->inputs[0]; //  get cur node input
+            Operand* ListUnpack_input = op->inputs[0];             //  get cur node input
             std::vector<Operand*> ListUnpack_output = op->outputs; // get cur node output
-            Operator* pre_node = ListUnpack_input->producer; //get pre node 
+            Operator* pre_node = ListUnpack_input->producer;       //get pre node
             pre_node->outputs.clear();
-            for(auto& single_out: ListUnpack_output)
+            for (auto& single_out : ListUnpack_output)
             {
                 single_out->producer = pre_node;
                 pre_node->outputs.push_back(single_out);
@@ -55,7 +55,6 @@ void eliminate_ListUnpack(Graph& graph)
             delete op;
 
             break;
-
         }
 
         if (!matched)

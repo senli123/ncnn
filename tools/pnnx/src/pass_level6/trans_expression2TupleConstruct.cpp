@@ -32,11 +32,11 @@ void trans_expression2TupleConstruct(Graph& graph)
             if (op->type != "pnnx.Expression")
                 continue;
             // get expr
-            if(op->has_param("expr"))
+            if (op->has_param("expr"))
             {
                 Parameter param = op->params["expr"];
                 std::string expr = param.s;
-                if(expr.front() == '[' && expr.back() == ']')
+                if (expr.front() == '[' && expr.back() == ']')
                 {
                     matched = true;
                     op->type = "prim::TupleConstruct";
@@ -44,7 +44,6 @@ void trans_expression2TupleConstruct(Graph& graph)
                     break;
                 }
             }
-
         }
 
         if (!matched)
