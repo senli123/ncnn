@@ -18,5 +18,6 @@ dev.1.0.3.20240325
 dev.1.0.4.20240327
 1. Replacing the native pybind11 with Python's pybind11 to avoid compilation failure of release libraries on Linux
 
-dev.1.0.5.20240507
+dev.1.0.5.20240508
 1. Synchronize the main ncnn repository
+2. Fix missing approximate parameters of nn.GELU
