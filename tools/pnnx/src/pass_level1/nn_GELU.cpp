@@ -13,7 +13,7 @@
 // specific language governing permissions and limitations under the License.
 
 #include "pass_level1.h"
-
+#include "../utils.h"
 namespace pnnx {
 
 class GELU : public FuseModulePass
@@ -27,6 +27,13 @@ public:
     const char* type_str() const
     {
         return "nn.GELU";
+    }
+
+    void write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph) const
+    {
+        const torch::jit::Node* celu = find_node_by_kind(graph, "aten::gelu");
+
+        op->params["approximate"] = celu->namedInput("approximate");
     }
 };
 
