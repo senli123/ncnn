@@ -53,7 +53,7 @@ jobs:
         sh codeformat.sh
     - uses: stefanzweifel/git-auto-commit-action@v5
       with:
-        commit_message: apply code-format changes
+        # commit_message: apply code-format changes
 
     - name: restore-clang-format-cache
       run: |
