@@ -380,6 +380,7 @@ set(pnnx_pass_level5_SRCS
 set(pnnx_pass_level6_SRCS
     pass_level6/eliminate_ListUnpack.cpp
     pass_level6/trans_expression2TupleConstruct.cpp
+    pass_level6/trans_Stack2Unsqueeze.cpp
 )
 
 set(pnnx_pass_ncnn_SRCS

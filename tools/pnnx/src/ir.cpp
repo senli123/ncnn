@@ -3296,7 +3296,7 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,
                 fprintf(pyfp, "v_%s = %s(", sanitize_identifier(op->outputs[0]->name).c_str(), op->type.c_str());
                 if (op->inputs.size() == 1)
                 {
-                    fprintf(pyfp, "v_%s", sanitize_identifier(op->inputs[0]->name).c_str());
+                    fprintf(pyfp, "[v_%s]", sanitize_identifier(op->inputs[0]->name).c_str());
                 }
                 else
                 {
