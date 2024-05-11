@@ -32,16 +32,17 @@ void trans_Stack2Unsqueeze(Graph& graph)
             if (op->type != "torch.stack")
                 continue;
             // get input num
-            if( op->inputs.size() == 1)
+            if (op->inputs.size() == 1)
             {
                 op->type = "torch.unsqueeze";
                 std::string str = op->name;
                 std::string from = "torch.stack";
                 std::string to = "torch.unsqueeze";
-            
+
                 // to find sub str
                 size_t start_pos = str.find(from);
-                if(start_pos != std::string::npos) {
+                if (start_pos != std::string::npos)
+                {
                     // replace sub str
                     str.replace(start_pos, from.length(), to);
                 }

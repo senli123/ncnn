@@ -2647,7 +2647,7 @@ int insert_function(FILE* pyfp, std::vector<std::string>& custom_ops_names, std:
     std::ostringstream functionContent;
     bool insideFunction = false;
 
-    std::regex functionStartRegex(R"(\s*def\s+(\w+)\s*\(.*\):)");
+    std::regex functionStartRegex(R "(\s*def\s+(\w+)\s*\(.*\):)");
     std::regex pattern("^import");
     std::smatch match;
 
@@ -2715,7 +2715,7 @@ int get_custom_op_names(std::string& customop_infer_py, std::vector<std::string>
 
     std::string line;
 
-    std::regex functionStartRegex(R"(\s*def\s+(\w+)\s*\(.*\):)");
+    std::regex functionStartRegex(R "(\s*def\s+(\w+)\s*\(.*\):)");
     std::smatch match;
 
     while (std::getline(file, line))
