@@ -11,8 +11,8 @@ try:
 	import torchvision.models as models
 	import torch.nn as nn
 	import torch.nn.functional as F
-	# sys.path.append('/workspace/trans_onnx/project/new_project/nvppnnx/python/build/temp.linux-x86_64-cpython-311/src')
-	sys.path.append('/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/python/build/temp.linux-x86_64-cpython-311/src')
+	sys.path.append('D:/project/programs/ncnn_project/ncnn/tools/pnnx/python/build/lib.win-amd64-cpython-38/pnnx')
+	# sys.path.append('/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/python/build/temp.linux-x86_64-cpython-311/src')
 	import ptx
 	graph = ptx.PnnxGraph()
 except ImportError as e:
@@ -223,10 +223,10 @@ class PnnxParser():
         tensor_nums = ops_nums - 1
         new_params_lines.insert(0,'{} {}\n'.format(ops_nums,tensor_nums))
         new_params_lines.insert(0,'7767517\n')
-        new_params_file_path = os.path.join(output_path,'{}-{}_mode.pnnx.param'.format(start_tensor_name, end_tensor_name))
+        new_params_file_path = os.path.join(output_path,'{}-{}_model.pnnx.param'.format(start_tensor_name, end_tensor_name))
         with open(new_params_file_path, 'w') as file:  
             file.writelines(new_params_lines)
-        new_infer_file_path = os.path.join(output_path,'{}-{}_mode_pnnx_infer.py'.format(start_tensor_name, end_tensor_name))
+        new_infer_file_path = os.path.join(output_path,'{}-{}_model_pnnx_infer.py'.format(start_tensor_name, end_tensor_name))
         self.Extract_forward(infer_path, start_tensor_name, end_tensor_name, input_shape, new_infer_file_path,sub_graph_all_tensor)
 
     def Extract_forward(self, infer_path, start_tensor_name, end_tensor_name, input_shape, new_infer_file_path, sub_graph_all_tensor):
@@ -282,11 +282,11 @@ if __name__ == "__main__":
     # print(line.split())
     
     parser = PnnxParser()
-    params_path = "/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/model_zoo/n16x_torch_fcn_r101b_d8_4xb2_80k_cityscapes_512x1024/model.pnnx.param"
-    infer_path = "/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/model_zoo/n16x_torch_fcn_r101b_d8_4xb2_80k_cityscapes_512x1024/model_pnnx_infer.py"
-    output_path = "/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/model_zoo/n16x_torch_fcn_r101b_d8_4xb2_80k_cityscapes_512x1024/output"
-    start_tensor_name  = '216'
-    end_tensor_name = '248'
+    params_path = "D:/project/model_zoo/icnet/model.pnnx.param"
+    infer_path = "D:/project/model_zoo/icnet/model_pnnx_infer.py"
+    output_path = "D:/project/model_zoo/icnet/extract"
+    start_tensor_name  = '144'
+    end_tensor_name = '145'
     parser.extract(params_path, infer_path, output_path, start_tensor_name, end_tensor_name)
 
 
