@@ -14,7 +14,7 @@ try:
 	sys.path.append('D:/project/programs/ncnn_project/ncnn/tools/pnnx/python/build/lib.win-amd64-cpython-38/pnnx')
 	# sys.path.append('/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/python/build/temp.linux-x86_64-cpython-311/src')
 	import ptx
-	graph = ptx.PnnxGraph()
+	
 except ImportError as e:
 	sys.exit(str(e))
 
@@ -61,6 +61,7 @@ class PnnxParser():
                 as: list(str) type==7
 
         """
+        self.graph = ptx.PnnxGraph()
     
     def LoadModel(self, params_path: str, bin_path: str):
         """
@@ -75,12 +76,12 @@ class PnnxParser():
             input_ops list(Operator)
             output_ops list(Operator)
         """
-        a = graph.loadModel(params_path,bin_path)
+        a = self.graph.loadModel(params_path,bin_path)
         assert(a is True, "please check your you input path")
-        operators = graph.getOperators()
-        operands = graph.getOperands()
-        input_ops = graph.getInputOps()
-        output_ops = graph.getOutputOps()
+        operators = self.graph.getOperators()
+        operands = self.graph.getOperands()
+        input_ops = self.graph.getInputOps()
+        output_ops = self.graph.getOutputOps()
 
         return operators, operands, input_ops, output_ops
        
@@ -100,7 +101,7 @@ class PnnxParser():
             input_ops list(Operator)
             output_ops list(Operator)
         """
-        result = graph.getNvpPnnxModel(pt_path_str, input_shape_str, custom_op_path_str, infer_py_path)
+        result = self.graph.getNvpPnnxModel(pt_path_str, input_shape_str, custom_op_path_str, infer_py_path)
         assert(result, "get pnnx model failed")
         params_path = pt_path_str.replace('.pt','.pnnx.param')
         bin_path = pt_path_str.replace('.pt','.pnnx.bin')
