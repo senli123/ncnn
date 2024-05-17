@@ -212,6 +212,7 @@ public:
     int load(const std::string& parampath, const std::string& binpath);
     int save(const std::string& parampath, const std::string& binpath);
 
+    int save_param(const std::string& parampath, const std::vector<Operator>& input_operators, const std::vector<Operand>& input_operands);
     int python(const std::string& pypath, const std::string& binpath);
 
     int parse(const std::string& param);

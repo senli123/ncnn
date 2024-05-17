@@ -74,11 +74,12 @@ PYBIND11_MODULE(ptx, m)
     .def(py::init<>())
     .def("getNvpPnnxModel", &PnnxGraph::getNvpPnnxModel)
     .def("loadModel", &PnnxGraph::loadModel)
+    .def("saveModel", &PnnxGraph::saveModel)
     .def("getOperators", (std::vector<Operator>(PnnxGraph::*)()) & PnnxGraph::getOperators)
     .def("getOperands", &PnnxGraph::getOperands, py::return_value_policy::reference_internal)
     .def("getInputOps", &PnnxGraph::getInputOps, py::return_value_policy::reference_internal)
     .def("getOutputOps", &PnnxGraph::getOutputOps, py::return_value_policy::reference_internal);
-
+    
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
 #else

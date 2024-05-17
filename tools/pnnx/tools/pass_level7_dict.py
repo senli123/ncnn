@@ -186,8 +186,15 @@ if __name__ == "__main__":
    
    
     parser = PnnxParser()
-    pt_path_str = 'D:/project/programs/my_project/tests/test_python/test_op/model_zoo2/stack_16/stack_16.pt' 
-    input_shape_str = '[1,3,224,224],[1,3,224,224]'
+    # stack
+    # example_name = 'stack'
+    # pt_path_str = 'D:/project/programs/my_project/tests/test_python/test_op/model_zoo2/stack_16/stack_16.pt' 
+    # input_shape_str = '[1,3,224,224],[1,3,224,224]'
+
+    example_name = 'scaled_dot_product_attention'
+    pt_path_str = 'D:/project/programs/my_project/tests/test_python/test_op/model_zoo2/scaled_dot_product_attention/scaled_dot_product_attention.pt' 
+    input_shape_str = '[1,197,9,64],[1,197,9,64],[1,197,9,64]'
+
     # custom_op_path_str = 
     # infer_py_path = 
     pass_level7_path = 'D:/project/programs/ncnn_project/ncnn/tools/pnnx/pass_level7'
@@ -198,20 +205,32 @@ if __name__ == "__main__":
     
     
     pass_level7_tmp_output_path = 'D:/project/programs/ncnn_project/ncnn/tools/pnnx/output/tmp'
+    pass_level7_tmp_output_path = os.path.join(pass_level7_tmp_output_path, example_name)
+    os.makedirs(pass_level7_tmp_output_path, exist_ok= True)
     # loop all pass level7
     all_pass_files = os.listdir(pass_level7_path)
-    all_pass_files = [pass_file for pass_file in all_pass_files if pass_file not in ['__init__.py'] and not os.path.isdir(os.path.join(pass_level7_path, pass_file))]
+    all_pass_files = [pass_file for pass_file in all_pass_files if pass_file not in ['__init__.py'] and not os.path.isdir(os.path.join(pass_level7_path, pass_file)) ]
     for pass_file in all_pass_files:
-        pass_name, _ = os.path.splitext(pass_file)
+        pass_name, extension = os.path.splitext(pass_file)
+        if extension != '.py':
+            continue
         print("run pass:{}".format(pass_name))
         passMod = load_module(os.path.join(pass_level7_path, pass_file))
-        op_type = getattr(passMod, 'op_type')
-        export_pt = getattr(passMod, 'export_torchscript')
+        if hasattr(passMod, 'op_type'):
+            op_type = getattr(passMod, 'op_type')
+        else:
+            assert False, 'There are not op_type attr in pass: {}'.format(pass_name)
+        if hasattr(passMod, 'export_torchscript'):
+            export_pt = getattr(passMod, 'export_torchscript')
+        else:
+            assert False, 'There are not export_torchscript function in pass: {}'.format(pass_name)
         # loop all op
+        pass_or_not = False
         while True:
             matched = False
             for op_name, op in operator_dict.items():
                 if op.type == op_type:
+                    pass_or_not = True
                     matched = True
                     
                     # -------run pass------
@@ -319,9 +338,17 @@ if __name__ == "__main__":
 
             if not matched:
                 break
-        operators, operands = trans_dict_to_list(operator_dict, operand_dict)
-        debug_op(operators)
-        debug_operand(operands)
+        
+        if pass_or_not:
+            # if pass valid visual
+            visual_operators, visual_operands = trans_dict_to_list(operator_dict, operand_dict)
+            # debug_op(operators)
+            # debug_operand(operands)
+            param_path = os.path.join(pass_level7_tmp_output_path, pass_name + '.pnnx.param')
+            parser.SaveModel(param_path, visual_operators, visual_operands)
+
+    # get finial 
+    operators, operands = trans_dict_to_list(operator_dict, operand_dict)
 
 
                 

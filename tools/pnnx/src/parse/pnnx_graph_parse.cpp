@@ -67,7 +67,13 @@ bool PnnxGraph::getNvpPnnxModel(const std::string& pt_path, const std::string& i
 
 bool PnnxGraph::loadModel(const std::string& param_path, const std::string& bin_path)
 {
+    if (this->graph_ != nullptr) 
+    {
+        this->graph_.reset(); 
+    }  
+
     this->graph_ = std::make_unique<Graph>();
+    
     int32_t load_result = this->graph_->load(param_path, bin_path);
     if (load_result != 0)
     {
@@ -156,6 +162,18 @@ std::vector<Operator> PnnxGraph::getInputOps() const
 std::vector<Operator> PnnxGraph::getOutputOps() const
 {
     return this->output_ops_;
+}
+
+
+bool PnnxGraph::saveModel(const std::string& parampath, const std::vector<Operator>& operators, const std::vector<Operand>& operands)
+{
+    int32_t save_result = this->graph_->save_param(parampath, operators, operands);
+    if (save_result != 0)
+    {
+        std::cout << "Can not save params to param path: " << parampath << std::endl;
+        return false;
+    }
+    return true;
 }
 
 } // namespace pnnx_graph

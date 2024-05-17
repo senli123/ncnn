@@ -12,7 +12,8 @@ try:
 	import torch.nn as nn
 	import torch.nn.functional as F
 	sys.path.append('D:/project/programs/ncnn_project/ncnn/tools/pnnx/python/build/lib.win-amd64-cpython-38/pnnx')
-	# sys.path.append('/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/python/build/temp.linux-x86_64-cpython-311/src')
+	# sys.path.append('D:/project/programs/ncnn_project/ncnn/tools/pnnx/python/build_release/lib.win-amd64-cpython-38/pnnx')
+    # sys.path.append('/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/python/build/temp.linux-x86_64-cpython-311/src')
 	import ptx
 	
 except ImportError as e:
@@ -77,7 +78,7 @@ class PnnxParser():
             output_ops list(Operator)
         """
         a = self.graph.loadModel(params_path,bin_path)
-        assert(a is True, "please check your you input path")
+        assert a is True, "please check your params_path: {}, bin_path: {}".format(params_path, bin_path)
         operators = self.graph.getOperators()
         operands = self.graph.getOperands()
         input_ops = self.graph.getInputOps()
@@ -102,9 +103,11 @@ class PnnxParser():
             output_ops list(Operator)
         """
         result = self.graph.getNvpPnnxModel(pt_path_str, input_shape_str, custom_op_path_str, infer_py_path)
-        assert(result, "get pnnx model failed")
+        assert result, "get pnnx model failed" 
         params_path = pt_path_str.replace('.pt','.pnnx.param')
         bin_path = pt_path_str.replace('.pt','.pnnx.bin')
         return self.LoadModel(params_path, bin_path)
     
-    # def pass_level7(self, pass_level7_path):
+    def SaveModel(self, param_path: str, operators, operands):
+        result = self.graph.saveModel(param_path, operators, operands)
+        assert result, "Failed to save model to path: {}".format(param_path)

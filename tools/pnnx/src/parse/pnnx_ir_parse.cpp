@@ -994,6 +994,193 @@ int Graph::save(const std::string& parampath, const std::string& binpath)
     return 0;
 }
 
+
+int Graph::save_param(const std::string& parampath, const std::vector<Operator>& input_operators, const std::vector<Operand>& input_operands)
+{
+    FILE* paramfp = fopen(parampath.c_str(), "wb");
+    if (!paramfp)
+    {
+        fprintf(stderr, "fopen %s failed\n", parampath.c_str());
+        return -1;
+    }
+
+    // magic
+    fprintf(paramfp, "7767517\n");
+
+    // op count and oprand count
+    fprintf(paramfp, "%d %d\n", (int)input_operators.size(), (int)input_operands.size());
+
+    for (const Operator op : input_operators)
+    {
+        fprintf(paramfp, "%-24s %-24s %d %d", op.type.c_str(), op.name.c_str(), (int)op.inputs.size(), (int)op.outputs.size());
+
+        for (const Operand* oprand : op.inputs)
+        {
+            fprintf(paramfp, " %s", oprand->name.c_str());
+        }
+
+        for (const Operand* oprand : op.outputs)
+        {
+            fprintf(paramfp, " %s", oprand->name.c_str());
+        }
+
+        for (const auto& it : op.params)
+        {
+            fprintf(paramfp, " %s=", it.first.c_str());
+
+            const Parameter& param = it.second;
+            if (param.type == 0)
+            {
+                fprintf(paramfp, "None");
+            }
+            if (param.type == 1)
+            {
+                if (param.b)
+                    fprintf(paramfp, "True");
+                else
+                    fprintf(paramfp, "False");
+            }
+            if (param.type == 2)
+            {
+                fprintf(paramfp, "%d", param.i);
+            }
+            if (param.type == 3)
+            {
+                fprintf(paramfp, "%e", param.f);
+            }
+            if (param.type == 4)
+            {
+                fprintf(paramfp, "%s", param.s.c_str());
+            }
+            if (param.type == 5)
+            {
+                fprintf(paramfp, "(");
+                for (size_t i = 0; i < param.ai.size(); i++)
+                {
+                    fprintf(paramfp, "%d", param.ai[i]);
+                    if (i + 1 != param.ai.size())
+                        fprintf(paramfp, ",");
+                }
+                fprintf(paramfp, ")");
+            }
+            if (param.type == 6)
+            {
+                fprintf(paramfp, "(");
+                for (size_t i = 0; i < param.af.size(); i++)
+                {
+                    fprintf(paramfp, "%e", param.af[i]);
+                    if (i + 1 != param.af.size())
+                        fprintf(paramfp, ",");
+                }
+                fprintf(paramfp, ")");
+            }
+            if (param.type == 7)
+            {
+                fprintf(paramfp, "(");
+                for (size_t i = 0; i < param.as.size(); i++)
+                {
+                    fprintf(paramfp, "%s", param.as[i].c_str());
+                    if (i + 1 != param.as.size())
+                        fprintf(paramfp, ",");
+                }
+                fprintf(paramfp, ")");
+            }
+        }
+
+        for (const auto& it : op.attrs)
+        {
+            fprintf(paramfp, " @%s=", it.first.c_str());
+
+            const Attribute& attr = it.second;
+            fprintf(paramfp, "(");
+            for (int i = 0; i < (int)attr.shape.size() - 1; i++)
+            {
+                fprintf(paramfp, "%d,", attr.shape[i]);
+            }
+            if (attr.shape.size() > 0)
+                fprintf(paramfp, "%d", attr.shape[attr.shape.size() - 1]);
+            fprintf(paramfp, ")");
+
+            fprintf(paramfp, type_to_string(attr.type));
+
+            std::string filename = op.name + "." + it.first;
+            // szw.write_file(filename, attr.data.data(), attr.data.size());
+        }
+
+        if (op.inputnames.size() == op.inputs.size())
+        {
+            for (size_t i = 0; i < op.inputs.size(); i++)
+            {
+                if (op.inputnames[i].empty())
+                    continue;
+
+                const Operand* oprand = op.inputs[i];
+                fprintf(paramfp, " $%s=%s", op.inputnames[i].c_str(), oprand->name.c_str());
+            }
+        }
+
+        for (const Operand* oprand : op.inputs)
+        {
+            if (oprand->shape.empty())
+                continue;
+
+            fprintf(paramfp, " #%s=", oprand->name.c_str());
+
+            fprintf(paramfp, "(");
+            for (int i = 0; i < (int)oprand->shape.size() - 1; i++)
+            {
+                if (oprand->shape[i] == -1)
+                    fprintf(paramfp, "?,");
+                else
+                    fprintf(paramfp, "%d,", oprand->shape[i]);
+            }
+            if (oprand->shape.size() > 0)
+            {
+                if (oprand->shape[oprand->shape.size() - 1] == -1)
+                    fprintf(paramfp, "?");
+                else
+                    fprintf(paramfp, "%d", oprand->shape[oprand->shape.size() - 1]);
+            }
+            fprintf(paramfp, ")");
+
+            fprintf(paramfp, type_to_string(oprand->type));
+        }
+
+        for (const Operand* oprand : op.outputs)
+        {
+            if (oprand->shape.empty())
+                continue;
+
+            fprintf(paramfp, " #%s=", oprand->name.c_str());
+
+            fprintf(paramfp, "(");
+            for (int i = 0; i < (int)oprand->shape.size() - 1; i++)
+            {
+                if (oprand->shape[i] == -1)
+                    fprintf(paramfp, "?,");
+                else
+                    fprintf(paramfp, "%d,", oprand->shape[i]);
+            }
+            if (oprand->shape.size() > 0)
+            {
+                if (oprand->shape[oprand->shape.size() - 1] == -1)
+                    fprintf(paramfp, "?");
+                else
+                    fprintf(paramfp, "%d", oprand->shape[oprand->shape.size() - 1]);
+            }
+            fprintf(paramfp, ")");
+
+            fprintf(paramfp, type_to_string(oprand->type));
+        }
+
+        fprintf(paramfp, "\n");
+    }
+
+    fclose(paramfp);
+
+    return 0;
+}
+
 static std::string sanitize_identifier(const std::string& s)
 {
     std::string ss = s;

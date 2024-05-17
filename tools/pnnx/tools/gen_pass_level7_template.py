@@ -90,13 +90,26 @@ def gen_pass_level7_template(ops, output_path, pass_name):
 if __name__ == "__main__":
 
     parser = PnnxParser()
-    pt_path_str = 'D:/project/programs/my_project/tests/test_python/test_op/model_zoo2/stack_16/stack_16.pt' 
-    input_shape_str = '[1,3,224,224],[1,3,224,224]'
+    # stack
+    # pt_path_str = 'D:/project/programs/my_project/tests/test_python/test_op/model_zoo2/stack_16/stack_16.pt' 
+    # input_shape_str = '[1,3,224,224],[1,3,224,224]'
+    # pass_name = 'Stack2UnsqueezewithConcat'
+    
+    # # stack
+    # pt_path_str = 'D:/project/programs/my_project/tests/test_python/test_op/model_zoo2/scaled_dot_product_attention/scaled_dot_product_attention.pt' 
+    # input_shape_str = '[1,197,9,64],[1,197,9,64],[1,197,9,64]'
+    # pass_name = 'ScaledDotProductAttenPass'
+
+     # unfold
+    pt_path_str = 'D:/project/programs/my_project/tests/test_python/test_op/model_zoo2/unfold/unfold.pt' 
+    input_shape_str = '[1,1,4,4]'
+    pass_name = 'UnfoldPass'
+
     # custom_op_path_str = 
     # infer_py_path = 
     # gen pnnx model
     output_path = 'D:/project/programs/ncnn_project/ncnn/tools/pnnx/pass_level7/template'
-    pass_name = 'Stack2UnsqueezewithConcat'
+    
     operators, operands, input_ops, output_ops = parser.getNvpPnnxModel(pt_path_str, input_shape_str)
 
     # gen pass level7 template

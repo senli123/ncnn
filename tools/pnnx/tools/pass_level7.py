@@ -74,6 +74,7 @@ def ParseAttrs(op):
             sub_dict['data'] = attr.data
         attrs_data[name] = sub_dict
     return attrs_data
+
 def load_module(module_path):
     spec = importlib.util.spec_from_file_location("module", module_path)
     module = importlib.util.module_from_spec(spec)
@@ -97,6 +98,38 @@ def debug_operand(operands):
         consumers = [ o.name for o in tensor.consumers] 
         print("producer :{}".format(producer))
         print("consumers :{}".format(consumers))
+
+
+def get_src_node_info(op):
+    input_names, input_shapes, input_datas  = [], [], []
+    attr_input_names, attr_input_datas = [], []
+    inOperands = op.inputs
+    for operand in inOperands:
+        if operand.producer.type == 'pnnx.Attribute':
+            attrs_params = ParseAttrs(operand.producer)
+            operand_dict = attrs_params["data"]
+            attr_input_names.append(operand.name)
+            attr_input_datas.append(operand_dict['data'].reshape(operand_dict['shape']))
+        else:
+            input_names.append(operand.name)
+            input_shapes.append(operand.shape)
+            input_datas.append(torch.rand(operand.shape, dtype = torch.float))
+            
+    
+    outOperands = op.outputs
+    output_names = [out_operand.name for out_operand in outOperands]
+    return input_names, input_shapes, input_datas, attr_input_names, attr_input_datas, output_names
+
+def trans_list_to_dict(operator, operand):
+    operator_dict = {op.name : op for op in operator}
+    operand_dict = {tensor.name : tensor for tensor in operand}
+    return operator_dict, operand_dict
+
+def get_pre_node_name(operand_dict, operand_name):
+    cur_operand = operand_dict[operand_name]
+    return cur_operand.producer.name
+
+
 if __name__ == "__main__":
    
    
@@ -108,6 +141,10 @@ if __name__ == "__main__":
     pass_level7_path = 'D:/project/programs/ncnn_project/ncnn/tools/pnnx/pass_level7'
     # gen pnnx model
     operators, operands, input_ops, output_ops = parser.getNvpPnnxModel(pt_path_str, input_shape_str)
+    # trans list to dict for pass 
+    operator_dict, operand_dict = trans_list_to_dict(operators, operands)
+    
+    
     pass_level7_tmp_output_path = 'D:/project/programs/ncnn_project/ncnn/tools/pnnx/output/tmp'
     # loop all pass level7
     all_pass_files = os.listdir(pass_level7_path)
@@ -119,9 +156,9 @@ if __name__ == "__main__":
         op_type = getattr(passMod, 'op_type')
         export_pt = getattr(passMod, 'export_torchscript')
         # loop all op
-        for index, op in enumerate(operators):
+        for op_name, op in operator_dict.items():
             if op.type == op_type:
-                op_name = op.name
+                
                 # -------run pass------
                 
                 # 1. export pt
@@ -135,24 +172,12 @@ if __name__ == "__main__":
                     attrs_shape = attrs_value['shape']
                     params_dict[attrs_key] = attrs_data.reshape(attrs_shape)
                 
-                # gen input 
-                input_names, input_shapes, input_datas,src_input_Operands = [], [], [],[]
-                attr_input_names, attr_input_datas = [], []
-                inOperands = op.inputs
-                for operand in inOperands:
-                    if operand.producer.type == 'pnnx.Attribute':
-                        attrs_params = ParseAttrs(operand.producer)
-                        operand_dict = attrs_params["data"]
-                        attr_input_names.append(operand.name)
-                        attr_input_datas.append(operand_dict['data'].reshape(operand_dict['shape']))
-                    else:
-                        input_names.append(operand.name)
-                        input_shapes.append(operand.shape)
-                        input_datas.append(torch.rand(operand.shape, dtype = torch.float))
-                        src_input_Operands.append(operand)
-                
-                outOperands = op.outputs
-                output_names = [operand.name for operand in outOperands]
+
+                # get src node info
+                input_names, input_shapes, input_datas, \
+                    attr_input_names, attr_input_datas,\
+                        output_names = get_src_node_info(op)
+
                 # export pt
                 all_params_dict = params_dict.copy()
                 all_params_dict['v_0'] = input_datas
@@ -170,17 +195,20 @@ if __name__ == "__main__":
                 
                 # delect cur op
                 # delete cur input attribute
-                del_op_indexs = []
-                for cur_index, cur_op in enumerate(operators):
-                    if len(cur_op.outputs) == 0:
-                        continue
-                    if cur_op.outputs[0].name in attr_input_names: 
-                        del_op_indexs.append(cur_index)
-                del_op_indexs.append(index)
-                del_op_indexs.sort(reverse=True)  
-                for cur_attr_op_index in del_op_indexs:   
-                    del operators[cur_attr_op_index]
-
+                # del_op_indexs = []
+                # for cur_index, cur_op in enumerate(operators):
+                #     if len(cur_op.outputs) == 0:
+                #         continue
+                #     if cur_op.outputs[0].name in attr_input_names: 
+                #         del_op_indexs.append(cur_index)
+                # del_op_indexs.append(index)
+                # del_op_indexs.sort(reverse=True)  
+                # for cur_attr_op_index in del_op_indexs:   
+                #     del operators[cur_attr_op_index]
+                attr_input_node_name = [get_pre_node_name(operand_dict, attr_input_name) for attr_input_name in attr_input_names ]
+                del_op_names = [op.name] +  attr_input_node_name
+                for del_op_name in del_op_names:
+                    operator_dict.pop(del_op_name) 
                 # insert pass op
                 input_index = 0
                 output_index = 0
@@ -188,7 +216,7 @@ if __name__ == "__main__":
                     if cur_pass_op.type == 'pnnx.Input':
                         # get src input operand
                         src_input_operand_name = input_names[input_index]
-                        src_input_operand = src_input_Operands[input_index]
+                        src_input_operand = operand_dict[src_input_operand_name]
                         # get dst ops
                         cur_pass_input_operand = cur_pass_op.outputs[0]
                         cur_dst_ops = cur_pass_input_operand.consumers
@@ -198,26 +226,30 @@ if __name__ == "__main__":
                         # src_input_operand connect new node
                         src_input_operand.consumers = [ consumers  for consumers in src_input_operand.consumers if consumers.name != op_name ] + cur_dst_ops
                         for dst_op in cur_dst_ops:
-                            dst_op.inputs = [ src_input_operand if d_input.name == cur_pass_input_operand else d_input for d_input in dst_op.inputs]
+                            dst_op.inputs = [ src_input_operand if d_input.name == cur_pass_input_operand.name else d_input for d_input in dst_op.inputs]
                         input_index += 1
+
+                        
                     elif cur_pass_op.type == 'pnnx.Output':
                         src_output_name = output_names[output_index]
-                        src_output_operand = outOperands[output_index]
+                        src_output_operand = operand_dict[src_output_name]
                         src_output_operand_consumers = src_output_operand.consumers
                         dst_output_op = cur_pass_op.inputs[0].producer
                         src_output_operand.producer = dst_output_op
                         dst_output_op.outputs = [src_output_operand]
                         output_index += 1
                     else:
+
                         #update name
                         cur_pass_op.name = op_name + '_' + cur_pass_op.name
+                        if cur_pass_op.outputs[0].consumers[0].type != 'pnnx.Output': 
                         #update inputs outputs name
-                        for i in range(len(cur_pass_op.inputs)):
-                            cur_pass_op.inputs[i].name = op_name + '_' + cur_pass_op.inputs[i].name
-                        for j in range(len(cur_pass_op.outputs)):
-                            cur_pass_op.outputs[j].name = op_name + '_' + cur_pass_op.outputs[j].name
-                       
-                        operators.append(cur_pass_op)
+                            for i in range(len(cur_pass_op.inputs)):
+                                cur_pass_op.inputs[i].name = op_name + '_' + cur_pass_op.inputs[i].name
+                            for j in range(len(cur_pass_op.outputs)):
+                                cur_pass_op.outputs[j].name = op_name + '_' + cur_pass_op.outputs[j].name
+                        
+                        operator_dict[cur_pass_op.name] = cur_pass_op
                 
                 #delect src attr operands
                 del_operand_indexs = []

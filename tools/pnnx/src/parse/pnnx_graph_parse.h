@@ -9,6 +9,7 @@ namespace pnnx_graph {
 class PnnxGraph
 {
 public:
+
     /**
      * @brief Get the Nvp Pnnx Model object
      *
@@ -20,6 +21,7 @@ public:
      * @return false
      */
     bool getNvpPnnxModel(const std::string& pt_path, const std::string& input_shape, const std::string& custom_op_path, const std::string& custom_op_py);
+    
     /**
      * @brief load pnnx graph
      *
@@ -30,6 +32,17 @@ public:
      */
     bool loadModel(const std::string& param_path, const std::string& bin_path);
 
+    /**
+     * @brief 
+     * 
+     * @param parampath pnnx.param path
+     * @param operators input ops
+     * @param operands input operands
+     * @return true 
+     * @return false 
+     */
+    bool saveModel(const std::string& parampath, const std::vector<Operator>& operators, const std::vector<Operand>& operands);
+    
     /**
      * @brief Get the Operator object
      *
@@ -57,6 +70,9 @@ public:
      * @return std::vector<std::shared_ptr<pnnx::Operator>>
      */
     std::vector<Operator> getOutputOps() const;
+
+
+     
 
 private:
     /// @brief load pnnx graph
