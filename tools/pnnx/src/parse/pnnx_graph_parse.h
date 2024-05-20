@@ -2,6 +2,7 @@
 #include <string>
 #include <memory>
 #include <iostream>
+#include <unordered_map> 
 #include "pnnx_ir_parse.h"
 using namespace pnnx_ir;
 namespace pnnx_graph {
@@ -30,7 +31,7 @@ public:
      * @return true
      * @return false
      */
-    bool loadModel(const std::string& param_path, const std::string& bin_path);
+    bool loadModel(const std::string& param_path, const std::string& bin_path, const std::string& key);
 
     /**
      * @brief 
@@ -41,20 +42,20 @@ public:
      * @return true 
      * @return false 
      */
-    bool saveModel(const std::string& parampath, const std::vector<Operator>& operators, const std::vector<Operand>& operands);
+    bool saveModel(const std::string& parampath, const std::vector<Operator>& operators, const std::vector<Operand>& operands, const std::string& key);
     
     /**
      * @brief Get the Operator object
      *
      * @return std::vector<std::shared_ptr<pnnx::Operator>>
      */
-    std::vector<Operator> getOperators() const;
+    std::vector<Operator> getOperators(const std::string& key) const;
     /**
      * @brief Get the Operands object
      *
      * @return std::vector<std::shared_ptr<pnnx::Operand>>
      */
-    std::vector<Operand> getOperands() const;
+    std::vector<Operand> getOperands(const std::string& key) const;
 
     /**
      * @brief Get the Input Ops object
@@ -62,28 +63,29 @@ public:
      * @return std::vector<std::shared_ptr<pnnx::Operator>>
      */
 
-    std::vector<Operator> getInputOps() const;
+    std::vector<Operator> getInputOps(const std::string& key) const;
 
     /**
      * @brief Get the Output Ops object
      *
      * @return std::vector<std::shared_ptr<pnnx::Operator>>
      */
-    std::vector<Operator> getOutputOps() const;
+    std::vector<Operator> getOutputOps(const std::string& key) const;
 
 
      
 
 private:
     /// @brief load pnnx graph
-    std::unique_ptr<Graph> graph_;
+    // std::unique_ptr<Graph> graph_;
+    std::unordered_map<std::string, std::unique_ptr<Graph>> graph_map_;
     /// @brief  all operator
-    std::vector<Operator> operators_;
+    std::unordered_map<std::string, std::vector<Operator>> operators_map_;
     /// @brief  all operand
-    std::vector<Operand> operands_;
+    std::unordered_map<std::string, std::vector<Operand>> operands_map_;
     /// @brief  all input operator
-    std::vector<Operator> input_ops_;
+    std::unordered_map<std::string, std::vector<Operator>> input_ops_map_;
     /// @brief  all output operator
-    std::vector<Operator> output_ops_;
+    std::unordered_map<std::string, std::vector<Operator>> output_ops_map_;
 };
 } // namespace pnnx_graph

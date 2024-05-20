@@ -64,7 +64,7 @@ class PnnxParser():
         """
         self.graph = ptx.PnnxGraph()
     
-    def LoadModel(self, params_path: str, bin_path: str):
+    def LoadModel(self, params_path: str, bin_path: str, op_name: str):
         """
 
         Args:
@@ -77,17 +77,17 @@ class PnnxParser():
             input_ops list(Operator)
             output_ops list(Operator)
         """
-        a = self.graph.loadModel(params_path,bin_path)
+        a = self.graph.loadModel(params_path,bin_path, op_name)
         assert a is True, "please check your params_path: {}, bin_path: {}".format(params_path, bin_path)
-        operators = self.graph.getOperators()
-        operands = self.graph.getOperands()
-        input_ops = self.graph.getInputOps()
-        output_ops = self.graph.getOutputOps()
+        operators = self.graph.getOperators(op_name)
+        operands = self.graph.getOperands(op_name)
+        input_ops = self.graph.getInputOps(op_name)
+        output_ops = self.graph.getOutputOps(op_name)
 
         return operators, operands, input_ops, output_ops
        
     
-    def getNvpPnnxModel(self, pt_path_str: str, input_shape_str: str, custom_op_path_str: str = 'None', infer_py_path: str = 'None'):
+    def getNvpPnnxModel(self, pt_path_str: str, input_shape_str: str, custom_op_path_str: str = 'None', infer_py_path: str = 'None', op_name: str = 'src'):
         """_summary_
 
         Args:
@@ -106,8 +106,8 @@ class PnnxParser():
         assert result, "get pnnx model failed" 
         params_path = pt_path_str.replace('.pt','.pnnx.param')
         bin_path = pt_path_str.replace('.pt','.pnnx.bin')
-        return self.LoadModel(params_path, bin_path)
+        return self.LoadModel(params_path, bin_path, op_name)
     
-    def SaveModel(self, param_path: str, operators, operands):
-        result = self.graph.saveModel(param_path, operators, operands)
+    def SaveModel(self, param_path: str, operators, operands, op_name):
+        result = self.graph.saveModel(param_path, operators, operands, op_name)
         assert result, "Failed to save model to path: {}".format(param_path)
