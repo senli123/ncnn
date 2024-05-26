@@ -6,16 +6,20 @@ import shutil
 import json
 import importlib
 import re
+import platform
 try:
-	import torch
-	import torchvision.models as models
-	import torch.nn as nn
-	import torch.nn.functional as F
-	sys.path.append('D:/project/programs/ncnn_project/ncnn/tools/pnnx/python/build/lib.win-amd64-cpython-38/pnnx')
-	# sys.path.append('D:/project/programs/ncnn_project/ncnn/tools/pnnx/python/build_release/lib.win-amd64-cpython-38/pnnx')
-    # sys.path.append('/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/python/build/temp.linux-x86_64-cpython-311/src')
-	import ptx
-	
+    import torch
+    import torchvision.models as models
+    import torch.nn as nn
+    import torch.nn.functional as F
+    if platform.system() == "Windows":  
+        sys.path.append('D:/project/programs/ncnn_project/nvppnnx/python/build/lib.win-amd64-cpython-38/pnnx')
+    elif platform.system() == "Linux": 
+        sys.path.append('/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/python/build/temp.linux-x86_64-cpython-311/src')
+    else:    
+        assert False, "noly support win and linux"
+    import ptx
+    graph = ptx.PnnxGraph()
 except ImportError as e:
 	sys.exit(str(e))
 

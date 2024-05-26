@@ -28,6 +28,7 @@ public:
      *
      * @param param_path pnnx.param path
      * @param bin_path  pnnx.bin path
+     * @param key  model name
      * @return true
      * @return false
      */

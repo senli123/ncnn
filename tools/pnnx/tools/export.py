@@ -6,23 +6,32 @@ import shutil
 import json
 import importlib
 import numpy as np
+import platform 
 try:
-	import torch
-	import torchvision.models as models
-	import torch.nn as nn
-	import torch.nn.functional as F
-	# sys.path.append('/workspace/trans_onnx/project/new_project/nvppnnx/python/build/temp.linux-x86_64-cpython-311/src')
-	sys.path.append('D:/project/programs/ncnn_project/nvppnnx/python/build/lib.win-amd64-cpython-38/pnnx')
-	import ptx
-	graph = ptx.PnnxGraph()
+    import torch
+    import torchvision.models as models
+    import torch.nn as nn
+    import torch.nn.functional as F
+    if platform.system() == "Windows":  
+        sys.path.append('D:/project/programs/ncnn_project/nvppnnx/python/build/lib.win-amd64-cpython-38/pnnx')
+    elif platform.system() == "Linux": 
+        sys.path.append('/workspace/trans_onnx/project/new_project/nvppnnx/python/build/temp.linux-x86_64-cpython-311/src')
+    else:    
+        assert False, "noly support win and linux"
+    import ptx
+    graph = ptx.PnnxGraph()
 except ImportError as e:
 	sys.exit(str(e))
 import onnx
 from onnxsim import simplify
+ 
 
-save_path = 'D:/project/programs/ncnn_project/ncnn/tools/pnnx/model_zoo'
-
-
+if platform.system() == "Windows":  
+    save_path = 'D:/project/programs/ncnn_project/ncnn/tools/pnnx/model_zoo'
+elif platform.system() == "Linux":  
+    save_path = '/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/model_zoo'
+else:  
+    assert False, "noly support win and linux"
 
 
 #-------------------------------------------

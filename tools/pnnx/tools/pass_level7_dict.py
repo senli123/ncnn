@@ -302,18 +302,30 @@ if __name__ == "__main__":
     # multi stack
     example_name = 'multi_stack'
     pt_path_str = 'D:/project/programs/ncnn_project/ncnn/tools/pnnx/model_zoo/stack/stack.pt' 
+    pt_path_str = '/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/model_zoo/stack/stack.pt'
     input_shape_str = '[1,3,224],[1,3,224]'
 
     # custom_op_path_str = 
     # infer_py_path = 
-    pass_level7_path = 'D:/project/programs/ncnn_project/ncnn/tools/pnnx/pass_level7'
+    # pass_level7_path = 'D:/project/programs/ncnn_project/ncnn/tools/pnnx/pass_level7'
+    if platform.system() == "Windows":  
+        pass_level7_path = 'D:/project/programs/ncnn_project/ncnn/tools/pnnx/pass_level7'
+    elif platform.system() == "Linux": 
+        pass_level7_path = '/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/pass_level7'  
+    
+    
     # gen pnnx model
     operators, operands, input_ops, output_ops = parser.getNvpPnnxModel(pt_path_str, input_shape_str, 'None', 'None', 'src')
     # trans list to dict for pass 
     operator_dict, operand_dict = trans_list_to_dict(operators, operands)
     
     
-    pass_level7_tmp_output_path = 'D:/project/programs/ncnn_project/ncnn/tools/pnnx/output/tmp'
+    if platform.system() == "Windows":  
+        pass_level7_tmp_output_path = 'D:/project/programs/ncnn_project/ncnn/tools/pnnx/output/tmp'
+    elif platform.system() == "Linux": 
+        pass_level7_tmp_output_path = '/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/output/tmp'  
+    
+    
     pass_level7_tmp_output_path = os.path.join(pass_level7_tmp_output_path, example_name)
     os.makedirs(pass_level7_tmp_output_path, exist_ok= True)
     # loop all pass level7

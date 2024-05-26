@@ -38,11 +38,11 @@ def check_pass():
 	v_2 = torch.rand(1,3,224,224, dtype = torch.float)
 	v = [v_0, v_1, v_2]
 	#finish your check pass code
-from tools.serializer import *
-def export_pnnx(pt_path_str, input_shape_str):
-    parser = PnnxParser()
+# from tools.serializer import *
+# def export_pnnx(pt_path_str, input_shape_str):
+#     parser = PnnxParser()
     
-    operators, operands, input_ops, output_ops = parser.getNvpPnnxModel(pt_path_str, input_shape_str)
+#     operators, operands, input_ops, output_ops = parser.getNvpPnnxModel(pt_path_str, input_shape_str)
 	
 if __name__ == "__main__":
     export = 'pt'

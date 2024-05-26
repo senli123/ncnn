@@ -79,7 +79,7 @@ bool PnnxGraph::loadModel(const std::string& param_path, const std::string& bin_
    
     std::unique_ptr<Graph> graph_;
     graph_ = std::make_unique<Graph>();
-    this->graph_map_[key] = std::move(graph_); 
+   
     int32_t load_result = graph_->load(param_path, bin_path);
     if (load_result != 0)
     {
@@ -154,7 +154,7 @@ bool PnnxGraph::loadModel(const std::string& param_path, const std::string& bin_
     this->operands_map_[key] = operands_;
     this->input_ops_map_[key] = input_ops_;
     this->output_ops_map_[key] = output_ops_;
-
+    this->graph_map_[key] = std::move(graph_); 
     return true;
 }
 
