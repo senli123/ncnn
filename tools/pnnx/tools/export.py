@@ -35,6 +35,33 @@ else:
     assert False, "noly support win and linux"
 
 
+def input_torch_type_to_str(tensor):
+    if tensor.dtype == torch.float32 or tensor.dtype == torch.float:
+        return "f32"
+    if tensor.dtype == torch.float64 or tensor.dtype == torch.double:
+        return "f64"
+    if tensor.dtype == torch.float16 or tensor.dtype == torch.half:
+        return "f16"
+    if tensor.dtype == torch.uint8:
+        return "u8"
+    if tensor.dtype == torch.int8:
+        return "i8"
+    if tensor.dtype == torch.int16 or tensor.dtype == torch.short:
+        return "i16"
+    if tensor.dtype == torch.int32 or tensor.dtype == torch.int:
+        return "i32"
+    if tensor.dtype == torch.int64 or tensor.dtype == torch.long:
+        return "i64"
+    if tensor.dtype == torch.complex32:
+        return "c32"
+    if tensor.dtype == torch.complex64:
+        return "c64"
+    if tensor.dtype == torch.complex128:
+        return "c128"
+
+    return "f32"
+
+
 #-------------------------------------------
 # def models 
 #-------------------------------------------
@@ -65,6 +92,13 @@ class stackModel(nn.Module):
         v_4 = torch.stack([v_2,self.v_3],dim = 1) #,1,2,2,3,224
         return v_4
 
+class oneHotModel(nn.Module):
+        def __init__(self,):
+            super(oneHotModel, self).__init__()
+                 
+        def forward(self, v_0):
+            one_hot = F.one_hot(v_0, num_classes=4) 
+            return one_hot
  
 
 def export(model_name: str, net: nn.Module, input_shape, export_onnx: bool):
@@ -78,7 +112,7 @@ def export(model_name: str, net: nn.Module, input_shape, export_onnx: bool):
             elif isinstance(shape, torch.Tensor):
                 input_tensor_list.append(shape)
                 tensor_shape = shape.shape
-                input_shape_str_list.append('[' + ', '.join(str(item) for item in tensor_shape) + ']' )
+                input_shape_str_list.append('[' + ', '.join(str(item) for item in tensor_shape) + ']' + input_torch_type_to_str(shape) )
             else:
                 assert False, 'the type in input_shape must be torch.Tensor of list'  
         input_shape_str = ','.join(input_shape_str_list)
@@ -116,10 +150,11 @@ if __name__ == "__main__":
 
     net_map = {  
     "index2": IndexModel,
-    "stack":stackModel
+    "stack":stackModel,
+    "oneHot":oneHotModel,
 } 
     
-    model_name = 'index2'
+    model_name = 'oneHot'
     if model_name in net_map:  
         net = net_map[model_name]()  
     else:  
@@ -131,12 +166,18 @@ if __name__ == "__main__":
 	# 		[2.3, 3.4],
 	# 		[4.5, 5.7],
 	# 	])
-    v_0 = torch.tensor( [
-			[1.0, 1.2, 1.3],
-			[2.3, 3.4, 1.4],
-			[4.5, 5.7, 1.8],
-		])
-    v_0 = torch.rand([1,3,4,4], dtype= float)
+    # v_0 = torch.tensor( [
+	# 		[1.0, 1.2, 1.3],
+	# 		[2.3, 3.4, 1.4],
+	# 		[4.5, 5.7, 1.8],
+	# 	])
+    # v_0 = torch.rand([1,3,4,4], dtype= float)
+    v_0 = torch.tensor([0, 2, 1, 3])
     input_shape = [v_0]
+    # input_shape = [[1,3, 224]]
     export_onnx = True
     export(model_name, net, input_shape,export_onnx)
+    # import pnnx
+    # pnnx.export
+
+

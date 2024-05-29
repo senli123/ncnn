@@ -36,3 +36,6 @@ dev.1.0.9.20240528
 
 dev.1.0.10.20240529
 1. Support parse multi dim list to string
+
+dev.1.0.11.20240529
+1. Support parse F.one_hot

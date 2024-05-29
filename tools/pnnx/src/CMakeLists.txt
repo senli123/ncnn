@@ -154,6 +154,7 @@ set(pnnx_pass_level2_SRCS
     pass_level2/F_max_unpool2d.cpp
     pass_level2/F_mish.cpp
     pass_level2/F_normalize.cpp
+    pass_level2/F_one_hot.cpp
     pass_level2/F_pad.cpp
     pass_level2/F_pairwise_distance.cpp
     pass_level2/F_pixel_shuffle.cpp
