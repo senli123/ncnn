@@ -15,7 +15,8 @@ try:
     if platform.system() == "Windows":  
         sys.path.append('D:/project/programs/ncnn_project/nvppnnx/python/build/lib.win-amd64-cpython-38/pnnx')
     elif platform.system() == "Linux": 
-        sys.path.append('/workspace/trans_onnx/project/new_project/nvppnnx/python/build/temp.linux-x86_64-cpython-311/src')
+        # sys.path.append('/workspace/trans_onnx/project/new_project/nvppnnx/python/build/temp.linux-x86_64-cpython-311/src')
+        sys.path.append('/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/python/build/temp.linux-x86_64-cpython-311/src')
     else:    
         assert False, "noly support win and linux"
     import ptx
@@ -38,19 +39,19 @@ else:
 # def models 
 #-------------------------------------------
 
-class takeModel(nn.Module):
+class IndexModel(nn.Module):
     def __init__(self,):
-        super(takeModel, self).__init__()
-        
-    def forward(self, v_0):
-        # indices = torch.tensor([0,2], dtype=torch.long) 
-        indices= torch.tensor([
+        super(IndexModel, self).__init__()
+        self.indices= torch.tensor([
             [0, 1],
             [1, 2],
         ], dtype=torch.long) 
+    def forward(self, v_0):
+        # indices = torch.tensor([0,2], dtype=torch.long) 
+        
         # gathered = torch.gather(v_0, dim=3, index=indices)  
-        # gathered = v_0[:,indices]
-        gathered = v_0[indices,:]
+        gathered = v_0[:,self.indices,self.indices,:]
+        # gathered = v_0[self.indices,:]
         return gathered
     
 
@@ -114,22 +115,28 @@ def export(model_name: str, net: nn.Module, input_shape, export_onnx: bool):
 if __name__ == "__main__":
 
     net_map = {  
-    "take": takeModel,
+    "index2": IndexModel,
     "stack":stackModel
 } 
     
-    model_name = 'stack'
+    model_name = 'index2'
     if model_name in net_map:  
         net = net_map[model_name]()  
     else:  
         assert False, 'not found model_name: {} in net_map'.format(model_name)
 
-    input_shape = [[1,3, 224],[1,3,224]]
+    # input_shape = [[1,3, 224],[1,3,224]]
     # v_0 = torch.tensor( [
 	# 		[1.0, 1.2],
 	# 		[2.3, 3.4],
 	# 		[4.5, 5.7],
 	# 	])
-    # input_shape = [v_0]
+    v_0 = torch.tensor( [
+			[1.0, 1.2, 1.3],
+			[2.3, 3.4, 1.4],
+			[4.5, 5.7, 1.8],
+		])
+    v_0 = torch.rand([1,3,4,4], dtype= float)
+    input_shape = [v_0]
     export_onnx = True
     export(model_name, net, input_shape,export_onnx)

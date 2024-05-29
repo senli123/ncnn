@@ -300,11 +300,15 @@ if __name__ == "__main__":
     # input_shape_str = '[1,197,9,64],[1,197,9,64],[1,197,9,64]'
 
     # multi stack
-    example_name = 'multi_stack'
-    pt_path_str = 'D:/project/programs/ncnn_project/ncnn/tools/pnnx/model_zoo/stack/stack.pt' 
-    pt_path_str = '/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/model_zoo/stack/stack.pt'
-    input_shape_str = '[1,3,224],[1,3,224]'
+    # example_name = 'multi_stack'
+    # pt_path_str = 'D:/project/programs/ncnn_project/ncnn/tools/pnnx/model_zoo/stack/stack.pt' 
+    # pt_path_str = '/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/model_zoo/stack/stack.pt'
+    # input_shape_str = '[1,3,224],[1,3,224]'
 
+    # index
+    example_name = 'index'
+    pt_path_str = '/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/model_zoo/index/index.pt'
+    input_shape_str = '[3,2]'
     # custom_op_path_str = 
     # infer_py_path = 
     # pass_level7_path = 'D:/project/programs/ncnn_project/ncnn/tools/pnnx/pass_level7'

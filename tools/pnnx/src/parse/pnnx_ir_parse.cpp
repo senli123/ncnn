@@ -31,6 +31,18 @@
 using namespace pnnx;
 namespace pnnx_ir {
 
+static size_t countSubstring(const std::string& str, const std::string& substr) {  
+    size_t count = 0;  
+    size_t pos = 0;  
+  
+    while ((pos = str.find(substr, pos)) != std::string::npos) {  
+        ++count;  
+        pos += substr.length();  
+    }  
+  
+    return count;  
+} 
+
 static bool type_is_integer(int type)
 {
     if (type == 1) return false;
@@ -465,6 +477,25 @@ Attribute operator+(const Attribute& a, const Attribute& b)
 
 Parameter Parameter::parse_from_string(const std::string& value)
 {
+     if (value.find('%') != std::string::npos)
+    {
+        Parameter p;
+        p.type = 4;
+        p.s = value;
+        return p;
+    }
+    size_t count1 = countSubstring(value, "[");
+    size_t count2 = countSubstring(value, "]");
+    size_t count3 = countSubstring(value, "(");
+    size_t count4 = countSubstring(value, ")");
+    if(count1 > 1 || count2 > 1 || count3 > 1 || count4 >1)
+    {
+        Parameter p;
+        p.type = 4;
+        p.s = value;
+        return p;
+    }
+
     Parameter p;
     p.type = 0;
 
@@ -535,7 +566,6 @@ Parameter Parameter::parse_from_string(const std::string& value)
     p.i = std::stoi(value);
     return p;
 }
-
 Graph::Graph()
 {
 }

@@ -28,6 +28,40 @@ static void replaceAll(std::string& str, const std::string& from, const std::str
     }
 }
 
+static void multi_expr(int depth, std::vector<int>& attr_shape, const int64_t* pdata, std::string& attr_expr, int pre_depth, int& cur_index)
+{
+    if(depth == attr_shape.size() - 1)
+    {
+        attr_expr += "[";
+        for(int j = 0; j < attr_shape[attr_shape.size()-1]; j++)
+        {
+            int64_t n = pdata[cur_index + j];
+            attr_expr += std::to_string(n);
+            if( j != attr_shape[attr_shape.size()-1] - 1)
+            {
+                 attr_expr += ",";
+            }      
+        }
+        attr_expr += "]";
+        cur_index += attr_shape[attr_shape.size()-1];
+    }
+    else
+    {
+        int cur_dim = attr_shape[depth];
+        attr_expr += "[";
+        for(int i=0; i < cur_dim; i++)
+        {
+            multi_expr(depth+1, attr_shape, pdata, attr_expr, i, cur_index);
+            if (i != cur_dim -1)
+            {
+                attr_expr += ",";
+            }
+           
+        }
+        attr_expr += "]";
+
+    }
+}
 static std::string fuse_attribute_expression(Operator* op_expr)
 {
     std::string expr = op_expr->params["expr"].s;
@@ -57,20 +91,35 @@ static std::string fuse_attribute_expression(Operator* op_expr)
             }
             attr_expr += "]";
         }
+        // else if (attr.type == 5)
+        // {
+        //     // i64
+        //     const int64_t* pdata = (const int64_t*)attr.data.data();
+        //     attr_expr += "[";
+        //     for (int j = 0; j < count; j++)
+        //     {
+        //         int64_t n = pdata[j];
+        //         attr_expr += std::to_string(n);
+
+        //         if (j != count - 1)
+        //             attr_expr += ",";
+        //     }
+        //     attr_expr += "]";
+        // }
         else if (attr.type == 5)
         {
             // i64
             const int64_t* pdata = (const int64_t*)attr.data.data();
-            attr_expr += "[";
-            for (int j = 0; j < count; j++)
+            int depth = 0;
+            int attr_shape_size = attr.shape.size();
+            std::vector<int> attr_shape;
+            for(int i = 0; i < attr_shape_size; i++)
             {
-                int64_t n = pdata[j];
-                attr_expr += std::to_string(n);
-
-                if (j != count - 1)
-                    attr_expr += ",";
+                attr_shape.push_back(attr.shape[i]);
             }
-            attr_expr += "]";
+            int pre_depth = 0;
+            int cur_index = 0;
+            multi_expr(depth, attr_shape, pdata, attr_expr, pre_depth, cur_index);
         }
         else
         {

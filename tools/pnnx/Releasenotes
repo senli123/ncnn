@@ -24,3 +24,15 @@ dev.1.0.5.20240508
 
 dev.1.0.6.20240511
 1. Add new pass trans_Stack2Unsqueeze, When using torch.stack with a single input and effectively achieving the same result as torch.unsqueeze
+
+dev.1.0.7.20240521
+1. add saveModel function
+
+dev.1.0.8.20240526
+1. To solve the memory issue in ptx
+
+dev.1.0.9.20240528
+1. Support multi dim in fuse_index_expression pass for Tensor.index
+
+dev.1.0.10.20240529
+1. Support parse multi dim list to string
