@@ -39,3 +39,6 @@ dev.1.0.10.20240529
 
 dev.1.0.11.20240529
 1. Support parse F.one_hot
+
+dev.1.0.12.20240529
+1. Add getInputType function in infer py

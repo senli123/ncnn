@@ -3108,24 +3108,28 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,
 
     fprintf(pyfp, "\n");
 
-    // get input_shape add by senli[pnnx_infer]
+   // get input_shape and input_type add by senli[pnnx_infer]
     {
-        // example:
-        // def getInput(self,):
-        //     return [[1, 3, 32, 32],[1,3,64,64]]
-
-        fprintf(pyfp, "    def getInput(self,):\n");
-        fprintf(pyfp, "        return [");
-        //获得op的所有输入的shape
-        std::vector<std::vector<int> > input_shapes;
+        // get shape and type of the input op 
+        std::vector<std::vector<int>> input_shapes;
+        std::vector<std::string> input_types;
         for (const Operator* op : ops)
         {
             if (op->type != "pnnx.Input")
                 continue;
             const Operand* r = op->outputs[0];
             input_shapes.push_back(r->shape);
+            input_types.push_back(type_to_string(r->type));
         }
-        //依次写入shape
+
+        //insert shape
+        // example:
+        // def getInput(self,):
+        //     return [[1, 3, 32, 32],[1,3,64,64]]
+
+        fprintf(pyfp, "    def getInput(self,):\n");
+        fprintf(pyfp, "        return [");
+        
         for (size_t i = 0; i < input_shapes.size(); i++)
         {
             std::vector<int> one_input_shape = input_shapes[i];
@@ -3141,6 +3145,24 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,
                 fprintf(pyfp, ", ");
         }
         fprintf(pyfp, "]\n");
+
+        fprintf(pyfp, "\n");
+        
+        //insert type
+        // example:
+        // def getInputType(self,):
+        //     return ['fp32','i64']
+        fprintf(pyfp, "    def getInputType(self,):\n");
+        fprintf(pyfp, "        return [");
+        for (size_t i = 0; i < input_types.size(); i++)
+        {
+            std::string input_type = input_types[i];
+            fprintf(pyfp, "'%s'", input_type);
+            if (i + 1 != input_types.size())
+                fprintf(pyfp, ", ");
+        }
+        fprintf(pyfp, "]\n");
+
     }
     fprintf(pyfp, "\n");
     // utility function
