@@ -3157,7 +3157,7 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,
         for (size_t i = 0; i < input_types.size(); i++)
         {
             std::string input_type = input_types[i];
-            fprintf(pyfp, "'%s'", input_type);
+            fprintf(pyfp, "'%s'", input_type.c_str());
             if (i + 1 != input_types.size())
                 fprintf(pyfp, ", ");
         }
