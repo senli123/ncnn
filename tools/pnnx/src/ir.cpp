@@ -1406,21 +1406,48 @@ static std::string make_index_expression(const Operator* op)
     std::string index_expr = op->params.at("expr").s;
 
     // strip out-most [ ] pair
-    index_expr = index_expr.substr(1, index_expr.size() - 2);
+    // index_expr = index_expr.substr(1, index_expr.size() - 2);
 
-    // None,None,   ->   ...,
-    bool leading_none = false;
+    // // None,None,   ->   ...,
+    // bool leading_none = false;
+    // while (index_expr.substr(0, 5) == "None,")
+    // {
+    //     leading_none = true;
+    //     index_expr = index_expr.substr(5);
+    // }
+    // if (leading_none)
+    // {
+    //     index_expr = "...," + index_expr;
+    // }
+
+    // return index_expr;
+    std::vector<int> shape = op->inputs.at(0)->shape;
+    std::string out_index_expr = "";
+    index_expr = index_expr.substr(1, index_expr.size() - 2);
+    int indices_index = 0;
     while (index_expr.substr(0, 5) == "None,")
     {
-        leading_none = true;
+      
         index_expr = index_expr.substr(5);
+        indices_index++;
     }
-    if (leading_none)
+    for(int i = 0; i < shape.size(); i++)
     {
-        index_expr = "...," + index_expr;
-    }
+        if ( i == indices_index)
+        {
+            out_index_expr = out_index_expr + index_expr;
 
-    return index_expr;
+        }else
+        {
+            out_index_expr =  out_index_expr + ":";
+            
+        }
+        if ( i != shape.size() - 1)
+        {
+             out_index_expr =  out_index_expr + ",";
+        }
+    }
+    return out_index_expr;
 }
 
 int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
