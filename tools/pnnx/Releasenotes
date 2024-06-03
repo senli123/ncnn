@@ -48,3 +48,7 @@ dev.1.0.13.20240530
 
 dev.1.0.14.20240531
 1. Fix bug of make_index_expression for gen tensor.index infer op  
+
+dev.1.0.15.20240603
+1. Support parse Tensor.reshape_as 
+2. Add trans_ReshapeAs2Reshape pass

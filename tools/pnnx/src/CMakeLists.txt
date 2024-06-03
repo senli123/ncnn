@@ -192,6 +192,7 @@ set(pnnx_pass_level2_SRCS
     pass_level2/Tensor_new_zeros.cpp
     pass_level2/Tensor_repeat.cpp
     pass_level2/Tensor_reshape.cpp
+    pass_level2/Tensor_reshape_as.cpp
     pass_level2/Tensor_select.cpp
     pass_level2/Tensor_slice.cpp
     pass_level2/Tensor_to.cpp
@@ -382,6 +383,7 @@ set(pnnx_pass_level6_SRCS
     pass_level6/eliminate_ListUnpack.cpp
     pass_level6/trans_expression2TupleConstruct.cpp
     pass_level6/trans_Stack2Unsqueeze.cpp
+    pass_level6/trans_ReshapeAs2Reshape.cpp
 )
 
 set(pnnx_pass_ncnn_SRCS

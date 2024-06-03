@@ -638,7 +638,7 @@ TORCH_LIBRARY(upfirdn2d_op, m) {
 |F.max_unpool3d             |  |
 |F.mish                     | :heavy_check_mark: | :heavy_check_mark: |
 |F.normalize                | :heavy_check_mark: | :heavy_check_mark: |
-|F.one_hot                  |  |
+|F.one_hot                  | :heavy_check_mark: |
 |F.pad                      | :heavy_check_mark: | :heavy_check_mark: |
 |F.pairwise_distance        |  |
 |F.pdist                    |  |
@@ -673,7 +673,8 @@ TORCH_LIBRARY(upfirdn2d_op, m) {
 | torch.nn        | Is Supported | 
 |---------------------------|----|
 |nn.MaxUnpool2d         | :heavy_check_mark: | 
-
+|Tensor.index         | :heavy_check_mark: | 
+|Tensor.reshape_as         | :heavy_check_mark: | 
 
 # 调试技巧
 采用attach的方式在python中调试c++，在.vscode下的launch.json配置如下

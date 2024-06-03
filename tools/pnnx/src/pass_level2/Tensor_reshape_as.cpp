@@ -12,20 +12,30 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-#include "pass_level6.h"
+#include "pass_level2.h"
 
-#include "pass_level6/eliminate_ListUnpack.h"
-#include "pass_level6/trans_expression2TupleConstruct.h"
-#include "pass_level6/trans_Stack2Unsqueeze.h"
-#include "pass_level6/trans_ReshapeAs2Reshape.h"
 namespace pnnx {
 
-void pass_level6(Graph& g, const std::set<std::string>& foldable_constants, const std::string& foldable_constants_zippath)
+class Tensor_reshape_as : public GraphRewriterPass
 {
-    eliminate_ListUnpack(g);
-    trans_expression2TupleConstruct(g);
-    trans_Stack2Unsqueeze(g);
-    trans_ReshapeAs2Reshape(g);
-}
+public:
+    const char* match_pattern_graph() const
+    {
+        return R"PNNXIR(7767517
+4 3
+pnnx.Input              input_0     0 1 input
+pnnx.Input              input_1     0 1 input_1
+aten::reshape_as        op_0        2 1 input input_1 out
+pnnx.Output             output      1 0 out
+)PNNXIR";
+    }
+
+    const char* type_str() const
+    {
+        return "Tensor.reshape_as";
+    }
+};
+
+REGISTER_GLOBAL_PNNX_GRAPH_REWRITER_PASS(Tensor_reshape_as, 20)
 
 } // namespace pnnx
