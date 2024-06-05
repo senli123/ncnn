@@ -20,7 +20,7 @@ class Model(nn.Module):
 		v_8 = torch.matmul(input=v_7, other=v_3)
 		return v_8
 
-def export_torchscript(attn_mask, dropout_p, is_causal, v_0, save_dir, op_name, attr_data = None):
+def export_torchscript(attn_mask, dropout_p, is_causal, v_0, save_dir, op_name, attr_data = None, input_shapes = None):
 	net = Model(attn_mask, dropout_p, is_causal)
 	net.eval()
 	mod = torch.jit.trace(net, v_0)

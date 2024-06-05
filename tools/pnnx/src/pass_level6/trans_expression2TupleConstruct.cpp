@@ -36,11 +36,52 @@ void trans_expression2TupleConstruct(Graph& graph)
             {
                 Parameter param = op->params["expr"];
                 std::string expr = param.s;
+                // printf("op_name:%s\n",op->name.c_str());
                 if (expr.front() == '[' && expr.back() == ']')
                 {
                     matched = true;
-                    op->type = "prim::TupleConstruct";
-                    op->params.clear();
+                    std::vector<Operand*> outputs = op->outputs;
+                    bool sink_node_is_index = false;
+                    if(outputs[0]->consumers[0]->type == "Tensor.index")
+                    {
+                        sink_node_is_index = true;
+                    }
+                   
+                    if (sink_node_is_index)
+                    {
+                        // update expr 
+                        std::string out_operand_name = outputs[0]->name;
+                        size_t pos = 0; 
+                        if((pos = expr.find("0")) != std::string::npos)
+                        {
+                            expr.replace(pos, 1, out_operand_name);
+                        }
+                        outputs[0]->consumers[0]->params["expr"] = expr;
+                        Operand* input = op->inputs[0];
+                        Operator* pre_node = input->producer;  
+                        pre_node->outputs.clear();
+                        for (auto& single_out : outputs)
+                        {
+                            single_out->producer = pre_node;
+                            pre_node->outputs.push_back(single_out);
+                        }
+                        input->producer = 0;
+                        input->consumers.clear();
+                        graph.operands.erase(std::find(graph.operands.begin(), graph.operands.end(), input));
+                        delete input;
+
+                        op->inputs.clear();
+                        op->outputs.clear();
+
+                        graph.ops.erase(graph.ops.begin() + i);
+                        delete op;
+                    }
+                    else
+                    {
+                        op->type = "prim::TupleConstruct";
+                        op->params.clear();
+                    }
+                   
                     break;
                 }
             }

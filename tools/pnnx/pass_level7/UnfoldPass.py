@@ -9,9 +9,9 @@ op_type = 'nn.Unfold'
 class Model(nn.Module):
 	def __init__(self,dilation, kernel_size, padding, stride, input_shapes):
 		super(Model, self).__init__()
-		assert len(input_shapes) == 1, 'the num of nn.Unfold input must be equal 1'
+		assert len(input_shapes) == 1, 'the num of nn.Unfold input must be 1'
 		input_shape = input_shapes[0]
-		assert len(input_shape) == 4, 'the dim of nn.Unfold input must be equal 4'
+		assert len(input_shape) == 4, 'the dim of nn.Unfold input numst be 1'
 		self.b, c, ih, iw = input_shape
 		ih += 2 * padding[0]
 		iw += 2 * padding[1]
@@ -47,8 +47,8 @@ class Model(nn.Module):
 		return v_4
 
 
-def export_torchscript(dilation, kernel_size, padding, stride, v_0, save_dir, op_name, attr_data = None):
-	net = Model(dilation, kernel_size, padding, stride)
+def export_torchscript(dilation, kernel_size, padding, stride, v_0, save_dir, op_name, attr_data = None, input_shapes = None):
+	net = Model(dilation, kernel_size, padding, stride, input_shapes)
 	net.eval()
 	mod = torch.jit.trace(net, v_0)
 	pt_path = os.path.join(save_dir, op_name + '.pt').replace('\\','/')

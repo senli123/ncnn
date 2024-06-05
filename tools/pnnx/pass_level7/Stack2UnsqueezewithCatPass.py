@@ -24,8 +24,8 @@ class Model(nn.Module):
 			tensor_list.append(torch.unsqueeze(vv, self.dim))
 		v_1 = torch.cat(tensor_list, self.dim)
 		return v_1
-
-def export_torchscript(dim, v_0, save_dir, op_name, attr_data = []):
+	
+def export_torchscript(dim, v_0, save_dir, op_name, attr_data = [], input_shapes = None):
 	net = Model(dim, attr_data)
 	net.eval()
 	mod = torch.jit.trace(net, v_0)

@@ -105,12 +105,13 @@ def get_src_node_info(op):
     input_names, input_shapes, input_datas  = [], [], []
     attr_input_names, attr_input_datas = [], []
     inOperands = op.inputs
-    for operand in inOperands:
+    for index, operand in enumerate(inOperands):
         if operand.producer.type == 'pnnx.Attribute':
             attrs_params = ParseAttrs(operand.producer)
             operand_dict = attrs_params["data"]
             attr_input_names.append(operand.name)
-            attr_input_datas.append(operand_dict['data'].reshape(operand_dict['shape']))
+            # attr_input_datas.append(operand_dict['data'].reshape(operand_dict['shape']))
+            attr_input_datas[index] = torch.from_numpy(operand_dict['data'].reshape(operand_dict['shape']))
         else:
             input_names.append(operand.name)
             input_shapes.append(operand.shape)
@@ -206,7 +207,9 @@ def run_pass(op,operator_dict, operand_dict):
     all_params_dict['v_0'] = input_datas
     all_params_dict['save_dir'] = pass_level7_tmp_output_path
     all_params_dict['op_name'] = op_name
-    all_params_dict['attr_data'] = [torch.from_numpy(attr_input_data) for attr_input_data in attr_input_datas]
+    # all_params_dict['attr_data'] = [torch.from_numpy(attr_input_data) for attr_input_data in attr_input_datas]
+    all_params_dict['attr_data'] = attr_input_datas
+    all_params_dict['input_shapes'] = input_shapes
     export_pt(**all_params_dict)
 
     pass_pt_path = os.path.join(pass_level7_tmp_output_path, op_name + '.pt').replace('\\','/')

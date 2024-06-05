@@ -1431,6 +1431,10 @@ static std::string make_index_expression(const Operator* op)
         index_expr = index_expr.substr(5);
         indices_index++;
     }
+    size_t pos = 0;  
+    if ((pos = index_expr.find("@")) != std::string::npos) {  
+        index_expr.replace(pos, 1, "v_");  
+    }
     for(int i = 0; i < shape.size(); i++)
     {
         if ( i == indices_index)
@@ -1819,16 +1823,19 @@ int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
             else if (op->type == "Tensor.index")
             {
                 // index expr
-                if (op->inputs.size() == 2)
-                {
-                    std::string expanded_expr = expand_expression(op->inputs[1]->producer);
-                    fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), expanded_expr.c_str());
-                }
-                else
-                {
-                    std::string index_expr = make_index_expression(op);
-                    fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), index_expr.c_str());
-                }
+                // if (op->inputs.size() == 2)
+                // {
+                //     std::string expanded_expr = expand_expression(op->inputs[1]->producer);
+                //     fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), expanded_expr.c_str());
+                // }
+                // else
+                // {
+                //     std::string index_expr = make_index_expression(op);
+                //     fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), index_expr.c_str());
+                // }
+                std::string index_expr = make_index_expression(op);
+                fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), index_expr.c_str());
+                
             }
             else if (op->type == "Tensor.expand")
             {
@@ -3135,7 +3142,7 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,
 
     fprintf(pyfp, "\n");
 
-   // get input_shape and input_type add by senli[pnnx_infer]
+    // get input_shape and input_type add by senli[pnnx_infer]
     {
         // get shape and type of the input op 
         std::vector<std::vector<int>> input_shapes;
@@ -3268,16 +3275,18 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,
             else if (op->type == "Tensor.index")
             {
                 // index expr
-                if (op->inputs.size() == 2)
-                {
-                    std::string expanded_expr = expand_expression(op->inputs[1]->producer);
-                    fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), expanded_expr.c_str());
-                }
-                else
-                {
-                    std::string index_expr = make_index_expression(op);
-                    fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), index_expr.c_str());
-                }
+                // if (op->inputs.size() == 2)
+                // {
+                //     std::string expanded_expr = expand_expression(op->inputs[1]->producer);
+                //     fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), expanded_expr.c_str());
+                // }
+                // else
+                // {
+                //     std::string index_expr = make_index_expression(op);
+                //     fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), index_expr.c_str());
+                // }
+                std::string index_expr = make_index_expression(op);
+                fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), index_expr.c_str());
             }
             else if (op->type == "Tensor.expand")
             {

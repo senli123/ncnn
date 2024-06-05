@@ -99,9 +99,25 @@ class oneHotModel(nn.Module):
         def forward(self, v_0):
             one_hot = F.one_hot(v_0, num_classes=4) 
             return one_hot
+
+class reshape_as_Model(nn.Module):
+    def __init__(self,):
+        super(reshape_as_Model, self).__init__()
+        
+    def forward(self, x, y):
+        output = x.reshape_as(y)
+        return output
+    
+class unfold_Model(nn.Module):
+    def __init__(self,):
+        super(unfold_Model, self).__init__()
+        self.unfold = nn.Unfold(kernel_size=(3, 3), stride=(2, 2), padding=(0,1),dilation=(2,2))
+    def forward(self, x):
+        output = self.unfold(x)
+        return output
  
 
-def export(model_name: str, net: nn.Module, input_shape, export_onnx: bool):
+def export(model_name: str, net: Union[nn.Module, str], input_shape, export_onnx: bool):
     if isinstance(input_shape, list):
         input_tensor_list = []
         input_shape_str_list = []
@@ -129,10 +145,12 @@ def export(model_name: str, net: nn.Module, input_shape, export_onnx: bool):
         
     else:
         input_tensor_list = tuple(input_tensor_list)
-   
-    mod = torch.jit.trace(net, input_tensor_list)
-    pt_path = os.path.join(save_dir, model_name + '.pt').replace('\\','/')
-    mod.save(pt_path)
+    if isinstance(net, str):
+        pt_path = net
+    else:
+        mod = torch.jit.trace(net, input_tensor_list)
+        pt_path = os.path.join(save_dir, model_name + '.pt').replace('\\','/')
+        mod.save(pt_path)
     # export pnnx
     result = graph.getNvpPnnxModel(pt_path, input_shape_str, 'None', 'None')
     assert result == 1, 'failed to  export pnnx'
@@ -152,9 +170,11 @@ if __name__ == "__main__":
     "index2": IndexModel,
     "stack":stackModel,
     "oneHot":oneHotModel,
+    "reshape_as": reshape_as_Model,
+    "unfold":unfold_Model
 } 
     
-    model_name = 'oneHot'
+    model_name = 'unfold'
     if model_name in net_map:  
         net = net_map[model_name]()  
     else:  
@@ -172,11 +192,26 @@ if __name__ == "__main__":
 	# 		[4.5, 5.7, 1.8],
 	# 	])
     # v_0 = torch.rand([1,3,4,4], dtype= float)
-    v_0 = torch.tensor([0, 2, 1, 3])
-    input_shape = [v_0]
+    # v_0 = torch.tensor([0, 2, 1, 3])
+    # input_shape = [v_0]
     # input_shape = [[1,3, 224]]
+
+    # v_0 = torch.randn(2, 3)  # 第一个输入张量  
+    # v_1 = torch.randn(3, 2)  # 第二个输入张量  
+       
+    # input_shape = [v_0,v_1]
     export_onnx = True
-    export(model_name, net, input_shape,export_onnx)
+    #-------------------------------------------------------
+    # model_name = 'pvig'  
+    # net = '/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/model_zoo/pvig/model.pt'
+    # input_shape = [[1,3,224,224]]
+    # export_onnx = False
+    # ----------------------------
+
+    # unfold
+    input_shape = [[1,3,9,9]]
+
+    export(model_name, net, input_shape, export_onnx)
     # import pnnx
     # pnnx.export
 

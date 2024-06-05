@@ -25,6 +25,7 @@ def gen_pass_level7_template(ops, output_path, pass_name):
     params = cur_op.params
     attribute = cur_op.attrs
     init_params_name = list(params.keys()) + list(attribute.keys())
+    init_params_name.append('input_shapes')
     op_type = cur_op.type
 
     output_py_path = os.path.join(output_path, pass_name + '.py')
@@ -60,6 +61,7 @@ def gen_pass_level7_template(ops, output_path, pass_name):
         export_name.append('save_dir')
         export_name.append('op_name')
         export_name.append('attr_data = None')
+        export_name.append('input_shapes = None')
         export_params_name_str = ', '.join(export_name)
         f.write("def export_torchscript(" + export_params_name_str + "):\n")
         f.write("\tnet = Model(" + init_params_name_str + ")\n")
@@ -101,14 +103,21 @@ if __name__ == "__main__":
     # pass_name = 'ScaledDotProductAttenPass'
 
      # unfold
-    pt_path_str = 'D:/project/programs/my_project/tests/test_python/test_op/model_zoo2/unfold/unfold.pt' 
-    input_shape_str = '[1,1,4,4]'
-    pass_name = 'UnfoldPass'
+    pt_path_str = '/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/model_zoo/unfold/unfold.pt' 
+    input_shape_str = '[1,3,9,9]'
+    pass_name = 'UnfoldPass_new'
 
     # custom_op_path_str = 
     # infer_py_path = 
     # gen pnnx model
-    output_path = 'D:/project/programs/ncnn_project/ncnn/tools/pnnx/pass_level7/template'
+    if platform.system() == "Windows":  
+        output_path = 'D:/project/programs/ncnn_project/ncnn/tools/pnnx/pass_level7/template'
+    elif platform.system() == "Linux":  
+        output_path = '/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/pass_level7/template'
+    else:  
+        assert False, "noly support win and linux"
+
+    
     
     operators, operands, input_ops, output_ops = parser.getNvpPnnxModel(pt_path_str, input_shape_str)
 
