@@ -1,3 +1,4 @@
+
 // Tencent is pleased to support the open source community by making ncnn available.
 //
 // Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
@@ -12,23 +13,10 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-#include "pass_level6.h"
-
-#include "pass_level6/eliminate_ListUnpack.h"
-#include "pass_level6/trans_expression2TupleConstruct.h"
-#include "pass_level6/trans_Stack2Unsqueeze.h"
-#include "pass_level6/trans_ReshapeAs2Reshape.h"
-#include "pass_level6/trans_TensorTypeAs2TensorTo.h"
+#include "ir.h"
 
 namespace pnnx {
 
-void pass_level6(Graph& g, const std::set<std::string>& foldable_constants, const std::string& foldable_constants_zippath)
-{
-    eliminate_ListUnpack(g);
-    trans_expression2TupleConstruct(g);
-    trans_Stack2Unsqueeze(g);
-    trans_ReshapeAs2Reshape(g);
-    trans_TensorTypeAs2TensorTo(g);
-}
+void trans_TensorTypeAs2TensorTo(Graph& graph);
 
 } // namespace pnnx

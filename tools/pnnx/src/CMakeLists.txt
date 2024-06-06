@@ -384,6 +384,7 @@ set(pnnx_pass_level6_SRCS
     pass_level6/trans_expression2TupleConstruct.cpp
     pass_level6/trans_Stack2Unsqueeze.cpp
     pass_level6/trans_ReshapeAs2Reshape.cpp
+    pass_level6/trans_TensorTypeAs2TensorTo.cpp
 )
 
 set(pnnx_pass_ncnn_SRCS
@@ -700,7 +701,7 @@ set(pnnx_SRCS
     ${pnnx_pass_ncnn_SRCS}
 )
 
-# add_executable(pnnx ${pnnx_SRCS})
+
 file(GLOB_RECURSE SRC_PARSE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/parse/*.cpp
 )
@@ -766,6 +767,52 @@ set_target_properties(ptx PROPERTIES MACOSX_RPATH TRUE)
 include(GNUInstallDirs)
 # install(TARGETS pnnx RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(TARGETS ptx LIBRARY  DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+    add_executable(pnnx ${pnnx_SRCS})
+
+    set_property(SOURCE main.cpp APPEND PROPERTY COMPILE_DEFINITIONS BUILD_TORCH2PNNX)
+    target_link_libraries(pnnx PRIVATE torch2pnnx)
+
+    if(TorchVision_FOUND)
+        target_link_libraries(pnnx PRIVATE ${TORCHVISION_LIBRARY})
+    endif()
+
+    if(WIN32)
+        target_link_libraries(pnnx PRIVATE ${TORCH_LIBRARIES})
+    else()
+        target_link_libraries(pnnx PRIVATE ${TORCH_LIBRARIES} pthread dl)
+    endif()
+
+    if(PROTOBUF_FOUND)
+        set_property(SOURCE main.cpp APPEND PROPERTY COMPILE_DEFINITIONS BUILD_PNNX2ONNX)
+        target_link_libraries(pnnx PRIVATE pnnx2onnx)
+    endif()
+
+    if(onnxruntime_FOUND)
+        set_property(SOURCE main.cpp APPEND PROPERTY COMPILE_DEFINITIONS BUILD_ONNX2PNNX)
+        target_link_libraries(pnnx PRIVATE onnx2pnnx)
+    endif()
+
+    if(PNNX_COVERAGE)
+        target_compile_options(pnnx PUBLIC -coverage -fprofile-arcs -ftest-coverage)
+        target_link_libraries(pnnx PUBLIC -coverage -lgcov)
+    endif()
+
+    # set_target_properties(pnnx PROPERTIES COMPILE_FLAGS -fsanitize=address)
+    # set_target_properties(pnnx PROPERTIES LINK_FLAGS -fsanitize=address)
+
+    if(APPLE)
+        set_target_properties(pnnx PROPERTIES INSTALL_RPATH "@executable_path/")
+    else()
+        set_target_properties(pnnx PROPERTIES INSTALL_RPATH "$ORIGIN/")
+    endif()
+    set_target_properties(pnnx PROPERTIES MACOSX_RPATH TRUE)
+
+    include(GNUInstallDirs)
+    install(TARGETS pnnx RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
+
 if (WIN32)
     file(GLOB TORCH_DLL "${TORCH_INSTALL_PREFIX}/lib/*.dll")
     install(FILES ${TORCH_DLL} DESTINATION ${CMAKE_INSTALL_BINDIR})
