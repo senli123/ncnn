@@ -25,10 +25,15 @@ namespace pnnx {
 void pass_level6(Graph& g, const std::set<std::string>& foldable_constants, const std::string& foldable_constants_zippath)
 {
     eliminate_ListUnpack(g);
+    fprintf(stderr, "############# finish eliminate_ListUnpack\n");
     trans_expression2TupleConstruct(g);
+    fprintf(stderr, "############# finish trans_expression2TupleConstruct\n");
     trans_Stack2Unsqueeze(g);
+    fprintf(stderr, "############# finish trans_Stack2Unsqueeze\n");
     trans_ReshapeAs2Reshape(g);
+    fprintf(stderr, "############# finish trans_ReshapeAs2Reshape\n");
     trans_TensorTypeAs2TensorTo(g);
+    fprintf(stderr, "############# finish trans_TensorTypeAs2TensorTo\n");
 }
 
 } // namespace pnnx

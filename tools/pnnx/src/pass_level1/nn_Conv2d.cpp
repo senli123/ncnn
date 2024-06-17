@@ -56,7 +56,22 @@ public:
             convolution = convolution_mode;
         }
 
+        if(!convolution)
+        {
+            return;
+        }
         const auto& weight = mod.attr("weight").toTensor();
+        try{
+            op->params["groups"] = convolution->namedInput("groups");
+        }
+        catch (const std::runtime_error& e) {  
+            
+            fprintf(stderr, "Caught an exception: %s\n", e.what()); 
+        }  
+        catch (...) {  
+           
+            fprintf(stderr, "Caught an unknown exception\n");
+        }  
 
         op->params["groups"] = convolution->namedInput("groups");
         op->params["in_channels"] = weight.size(1) * op->params["groups"].i;

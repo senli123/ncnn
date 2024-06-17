@@ -58,3 +58,6 @@ dev.1.0.16.20240605
 
 dev.1.0.17.20240606
 1. Add trans_TensorTypeAs2TensorTo pass in pass level 7
+
+dev.1.0.18.20240613
+1. Skip conv2d nodes of type NoneType
