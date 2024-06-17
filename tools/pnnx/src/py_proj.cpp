@@ -5,7 +5,7 @@
 // #include <torch/extension.h>
 #define STRINGIFY(x)       #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
-#define MYLIBRARY_VERSION  "dev.1.0.18.20240613"
+#define MYLIBRARY_VERSION  "dev.1.0.19.20240614"
 using namespace pnnx_graph;
 using namespace pnnx_ir;
 namespace py = pybind11;
@@ -72,7 +72,7 @@ PYBIND11_MODULE(ptx, m)
     //add PnnxGraph class
     py::class_<PnnxGraph>(m, "PnnxGraph")
     .def(py::init<>())
-    .def("getNvpPnnxModel", &PnnxGraph::getNvpPnnxModel)
+    .def("getNvpPnnxModel", &PnnxGraph::getNvpPnnxModel, py::arg("pt_path"), py::arg("input_shape"), py::arg("custom_op_path"), py::arg("custom_op_py"), py::arg("start_nodes") = "", py::arg("end_nodes") = "")
     .def("loadModel", &PnnxGraph::loadModel)
     .def("saveModel", &PnnxGraph::saveModel)
     // .def("getOperators", (std::vector<Operator>(PnnxGraph::*)()) & PnnxGraph::getOperators)

@@ -18,10 +18,17 @@ public:
      * @param input_shape input shape of tensor
      * @param custom_op_path the path of define custom op
      * @param custom_op_py the py path of define custom op
+     * @param start_nodes the list of start nodes
+     * @param end_nodes the list of end nodes
      * @return true
      * @return false
      */
-    bool getNvpPnnxModel(const std::string& pt_path, const std::string& input_shape, const std::string& custom_op_path, const std::string& custom_op_py);
+    bool getNvpPnnxModel(const std::string& pt_path, \
+    const std::string& input_shape, \
+    const std::string& custom_op_path, \
+    const std::string& custom_op_py,
+    const std::string& start_nodes = "",
+    const std::string& end_nodes = "");
     
     /**
      * @brief load pnnx graph

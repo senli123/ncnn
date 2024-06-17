@@ -348,6 +348,8 @@ public:
     Operand* get_operand(const std::string& name);
     const Operand* get_operand(const std::string& name) const;
 
+    int extract_sub_graph(const std::vector<std::string>& start_nodes, const std::vector<std::string>& end_nodes);
+
     std::vector<Operator*> ops;
     std::vector<Operand*> operands;
 

@@ -3,22 +3,24 @@ int main(int argc, char** argv);
 namespace pnnx_graph {
 
 bool PnnxGraph::getNvpPnnxModel(const std::string& pt_path, const std::string& input_shape, const std::string& custom_op_path,
-                                const std::string& custom_op_py)
+                                const std::string& custom_op_py, const std::string& start_nodes, const std::string& end_nodes)
+
 {
     int argc;
     char** argv;
     if (custom_op_path != "None" && custom_op_py != "None")
     {
-        argc = 5;
+        argc = 7;
     }
     else if (custom_op_path != "None" && custom_op_py == "None")
     {
-        argc = 4;
+        argc = 6;
     }
     else if (custom_op_path == "None" && custom_op_py == "None")
     {
-        argc = 3;
+        argc = 5;
     }
+
     argv = new char*[argc];
 
     argv[0] = new char[1];
@@ -49,8 +51,18 @@ bool PnnxGraph::getNvpPnnxModel(const std::string& pt_path, const std::string& i
         std::strcpy(argv[4], custom_op_py_info.c_str());
     }
 
-    int result = main(argc, argv);
+    //insert start nodes
+    std::string stard_nodes_info = "start_nodes=" + start_nodes;
+    argv[argc - 2] = new char[stard_nodes_info.size() + 1];
+    std::strcpy( argv[argc - 2], stard_nodes_info.c_str());
 
+    //insert end nodes
+    std::string end_nodes_info = "end_nodes=" + end_nodes;
+    argv[argc - 1] = new char[end_nodes_info.size() + 1];
+    std::strcpy( argv[argc - 1], end_nodes_info.c_str());
+
+    int result = main(argc, argv);
+   
     for (int i = 0; i < argc; ++i)
     {
         delete[] argv[i];

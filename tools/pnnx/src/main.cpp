@@ -229,6 +229,9 @@ int main(int argc, char** argv)
     std::vector<std::string> module_operators;
     // add by senli
     std::string customop_infer_py = "None";
+    std::vector<std::string> start_nodes;
+    std::vector<std::string> end_nodes;
+
     for (int i = 2; i < argc; i++)
     {
         // key=value
@@ -281,6 +284,10 @@ int main(int argc, char** argv)
         // add by senli
         if (strcmp(key, "customop_infer_py") == 0)
             customop_infer_py = value;
+        if (strcmp(key, "start_nodes") == 0)
+            parse_string_list(value, start_nodes);
+        if (strcmp(key, "end_nodes") == 0)
+            parse_string_list(value, end_nodes);
     }
 
     // print options
@@ -312,6 +319,12 @@ int main(int argc, char** argv)
         fprintf(stderr, "\n");
         // add by senli
         fprintf(stderr, "customop_infer_py = %s\n", customop_infer_py.c_str());
+        fprintf(stderr, "\n");
+        fprintf(stderr, "start_nodes = ");
+        print_string_list(start_nodes);
+        fprintf(stderr, "\n");
+        fprintf(stderr, "end_nodes = ");
+        print_string_list(end_nodes);
         fprintf(stderr, "\n");
     }
 
@@ -365,6 +378,13 @@ int main(int argc, char** argv)
 
     // delete foldable_constants_zippath
     remove(foldable_constants_zippath.c_str());
+    
+    // extract_sub_graph
+    int extract_flag = pnnx_graph.extract_sub_graph(start_nodes, end_nodes);
+    if(extract_flag == -1)
+    {
+        fprintf(stderr, "############# failed to extract_sub_graph\n");
+    }
 
     pnnx_graph.save(pnnxparampath, pnnxbinpath);
 
