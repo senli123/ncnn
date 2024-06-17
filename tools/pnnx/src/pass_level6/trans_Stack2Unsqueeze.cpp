@@ -19,18 +19,19 @@
 
 namespace pnnx {
 
-void trans_Stack2Unsqueeze(Graph& graph)
+void trans_Stack2Unsqueeze(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type != "torch.stack")
                 continue;
+           
             // get input num
             if( op->inputs.size() == 1)
             {

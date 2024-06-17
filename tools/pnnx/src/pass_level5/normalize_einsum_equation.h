@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void normalize_einsum_equation(Graph& graph);
+void normalize_einsum_equation(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

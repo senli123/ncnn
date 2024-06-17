@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void eval_expression(Graph& graph);
+void eval_expression(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

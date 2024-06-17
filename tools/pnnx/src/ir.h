@@ -325,7 +325,7 @@ public:
     //add by senli[pnnx_infer]
     int python_infer(const std::string& pypath, const std::string& binpath,
                      const std::vector<std::string>& customop_modules, std::set<std::string>& custom_ops,
-                     std::string& customop_infer_py);
+                     std::string& customop_infer_py, std::string& save_dir);
 
     int parse(const std::string& param);
 
@@ -346,6 +346,9 @@ public:
     Operand* new_operand(const std::string& name);
 
     Operand* get_operand(const std::string& name);
+
+    Operator* get_operator(const std::string& name);
+    
     const Operand* get_operand(const std::string& name) const;
 
     int extract_sub_graph(const std::vector<std::string>& start_nodes, const std::vector<std::string>& end_nodes);

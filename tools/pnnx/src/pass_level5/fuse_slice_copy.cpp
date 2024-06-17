@@ -21,15 +21,15 @@
 
 namespace pnnx {
 
-void fuse_slice_copy(Graph& graph)
+void fuse_slice_copy(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type != "Tensor.copy")
                 continue;
@@ -105,13 +105,13 @@ void fuse_slice_copy(Graph& graph)
                 out->producer = 0;
                 out->consumers.clear();
 
-                graph.operands.erase(std::find(graph.operands.begin(), graph.operands.end(), out));
+                graph->operands.erase(std::find(graph->operands.begin(), graph->operands.end(), out));
                 delete out;
 
                 op->inputs.clear();
                 op->outputs.clear();
 
-                graph.ops.erase(graph.ops.begin() + i);
+                graph->ops.erase(graph->ops.begin() + i);
                 delete op;
 
                 break;
@@ -122,8 +122,8 @@ void fuse_slice_copy(Graph& graph)
             op->type = "Tensor.slice_copy";
 
             // insert clone just after the producer
-            Operator* op_clone = graph.new_operator_after("Tensor.clone", op->name + "_ncnnclone", top_sop->inputs[0]->producer);
-            Operand* clone_out = graph.new_operand(op->name + "_ncnnclone_out");
+            Operator* op_clone = graph->new_operator_after("Tensor.clone", op->name + "_ncnnclone", top_sop->inputs[0]->producer);
+            Operand* clone_out = graph->new_operand(op->name + "_ncnnclone_out");
 
             clone_out->type = top_sop->inputs[0]->type;
             clone_out->shape = top_sop->inputs[0]->shape;

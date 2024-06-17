@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void eliminate_maxpool_indices(Graph& graph);
+void eliminate_maxpool_indices(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

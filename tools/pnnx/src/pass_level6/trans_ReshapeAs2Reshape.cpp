@@ -19,15 +19,15 @@
 
 namespace pnnx {
 
-void trans_ReshapeAs2Reshape(Graph& graph)
+void trans_ReshapeAs2Reshape(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type != "Tensor.reshape_as")
                 continue;
@@ -55,11 +55,11 @@ void trans_ReshapeAs2Reshape(Graph& graph)
             //         }
             //     }
 
-            //     for(int index = 0; index < graph.operands.size(); index++)
+            //     for(int index = 0; index < graph->operands.size(); index++)
             //     {
-            //         if(graph.operands[index]->name == input1->name)
+            //         if(graph->operands[index]->name == input1->name)
             //         {
-            //             graph.operands.erase(graph.operands.begin() + index);
+            //             graph->operands.erase(graph->operands.begin() + index);
             //             break;
             //         }
             //     }
@@ -112,12 +112,12 @@ void trans_ReshapeAs2Reshape(Graph& graph)
             {
                 delete_op->inputs.clear();
                 delete_op->outputs.clear();
-                graph.ops.erase(std::find(graph.ops.begin(), graph.ops.end(), delete_op));
+                graph->ops.erase(std::find(graph->ops.begin(), graph->ops.end(), delete_op));
                 delete delete_op;
             }
             for(auto delete_operand: delete_operands)
             {
-                graph.operands.erase(std::find(graph.operands.begin(), graph.operands.end(), delete_operand));
+                graph->operands.erase(std::find(graph->operands.begin(), graph->operands.end(), delete_operand));
                 delete delete_operand;
             }
             break;

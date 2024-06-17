@@ -780,7 +780,7 @@ static bool match(const Operator* anchor, const Operator* pattern, std::map<std:
     return true;
 }
 
-void pnnx_graph_rewrite(Graph& graph, const GraphRewriterPass* pass, int& opindex)
+void pnnx_graph_rewrite(std::shared_ptr<pnnx::Graph> graph, const GraphRewriterPass* pass, int& opindex)
 {
     Graph pattern_graph;
     pattern_graph.parse(pass->match_pattern_graph());
@@ -791,6 +791,7 @@ void pnnx_graph_rewrite(Graph& graph, const GraphRewriterPass* pass, int& opinde
     std::vector<const Operator*> pattern_graph_output_operators;
     for (const auto& x : pattern_graph.ops)
     {
+        // printf("op_name = %s, op_type = %s, pass_name = %s\n", x->name.c_str(), x->type.c_str(), pass->type_str()); 
         if (x->type == "pnnx.Input")
         {
             for (const auto& y : x->outputs)
@@ -808,7 +809,7 @@ void pnnx_graph_rewrite(Graph& graph, const GraphRewriterPass* pass, int& opinde
 
     while (1)
     {
-        const int graph_op_count = (int)graph.ops.size();
+        const int graph_op_count = (int)graph->ops.size();
 
         bool matched = true;
 
@@ -834,7 +835,7 @@ void pnnx_graph_rewrite(Graph& graph, const GraphRewriterPass* pass, int& opinde
                     int j = q;
                     for (; j >= 0; j--)
                     {
-                        const Operator* anchor = graph.ops[j];
+                        const Operator* anchor = graph->ops[j];
 
                         std::map<std::string, const Operator*> matched_operators2;
                         std::map<std::string, const Operand*> matched_inputs2;
@@ -966,7 +967,7 @@ void pnnx_graph_rewrite(Graph& graph, const GraphRewriterPass* pass, int& opinde
         for (auto& _x : operands_to_remove)
         {
             Operand* r = _x.second;
-            graph.operands.erase(std::find(graph.operands.begin(), graph.operands.end(), r));
+            graph->operands.erase(std::find(graph->operands.begin(), graph->operands.end(), r));
             delete r;
         }
 
@@ -976,12 +977,12 @@ void pnnx_graph_rewrite(Graph& graph, const GraphRewriterPass* pass, int& opinde
             int cur_index = 1;
             for (auto& o : matched_operators)
             {
-                int c_index = std::find(graph.ops.begin(), graph.ops.end(), o.second) - graph.ops.begin();
+                int c_index = std::find(graph->ops.begin(), graph->ops.end(), o.second) - graph->ops.begin();
                 cur_index = std::max(cur_index, c_index + 1);
             }
 
-            cur_index = std::min(cur_index, (int)graph.ops.size() - 1);
-            cur = graph.ops[cur_index];
+            cur_index = std::min(cur_index, (int)graph->ops.size() - 1);
+            cur = graph->ops[cur_index];
         }
 
         // remove all matched_operators
@@ -991,7 +992,7 @@ void pnnx_graph_rewrite(Graph& graph, const GraphRewriterPass* pass, int& opinde
 
             Operator* x = (Operator*)_x.second;
 
-            graph.ops.erase(std::find(graph.ops.begin(), graph.ops.end(), x));
+            graph->ops.erase(std::find(graph->ops.begin(), graph->ops.end(), x));
 
             delete _x.second;
         }
@@ -999,7 +1000,7 @@ void pnnx_graph_rewrite(Graph& graph, const GraphRewriterPass* pass, int& opinde
         if (pass->replace_pattern_graph() == 0)
         {
             // insert single
-            Operator* op = graph.new_operator_before(pass->type_str(), std::string(pass->name_str()), cur);
+            Operator* op = graph->new_operator_before(pass->type_str(), std::string(pass->name_str()), cur);
 
             for (const auto& k : pattern_graph_inputs)
             {
@@ -1035,7 +1036,7 @@ void pnnx_graph_rewrite(Graph& graph, const GraphRewriterPass* pass, int& opinde
                 if (op->type == "pnnx.Input" || op->type == "pnnx.Output")
                     continue;
 
-                graph.ops.insert(std::find(graph.ops.begin(), graph.ops.end(), cur), op);
+                graph->ops.insert(std::find(graph->ops.begin(), graph->ops.end(), cur), op);
                 replace_graph.ops[i] = 0;
                 ops[op->name] = op;
             }
@@ -1046,7 +1047,7 @@ void pnnx_graph_rewrite(Graph& graph, const GraphRewriterPass* pass, int& opinde
                 if (r->producer->type == "pnnx.Input" || (r->consumers.size() == 1 && r->consumers[0]->type == "pnnx.Output"))
                     continue;
 
-                graph.operands.push_back(r);
+                graph->operands.push_back(r);
                 replace_graph.operands[i] = 0;
             }
 
@@ -1121,9 +1122,9 @@ static bool is_alias_op(const Operator* op)
     return false;
 }
 
-static void functionize(Graph& graph)
+static void functionize(std::shared_ptr<pnnx::Graph> graph)
 {
-    // graph.save("0.param", "0.bin");
+    // graph->save("0.param", "0.bin");
 
     // 1. create shadow view/slice/select/... for each consumer
     // 2. replace inplace op, append copy
@@ -1137,9 +1138,9 @@ static void functionize(Graph& graph)
 
     // 1. create shadow view/slice/select/... for each consumer
     {
-        for (int i = (int)graph.ops.size() - 1; i >= 0; i--)
+        for (int i = (int)graph->ops.size() - 1; i >= 0; i--)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (!is_alias_op(op))
                 continue;
@@ -1153,9 +1154,9 @@ static void functionize(Graph& graph)
             {
                 Operator* op1 = out0->consumers[j];
 
-                Operator* op_shadow = graph.new_operator_after(op->type, op->name + "_pnnxshadow_" + std::to_string(j), op);
+                Operator* op_shadow = graph->new_operator_after(op->type, op->name + "_pnnxshadow_" + std::to_string(j), op);
 
-                Operand* shadow_out = graph.new_operand(op_shadow->name + "_out");
+                Operand* shadow_out = graph->new_operand(op_shadow->name + "_out");
 
                 op_shadow->inputs = op->inputs;
                 op_shadow->params = op->params;
@@ -1184,14 +1185,14 @@ static void functionize(Graph& graph)
         }
     }
 
-    // graph.save("1.param", "1.bin");
+    // graph->save("1.param", "1.bin");
 
     // 2. replace inplace op, append copy
     // 3. tag operand alias for view/slice/select/... output
     {
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             bool is_inplace_op = op->type.size() > 2 && op->type[op->type.size() - 2] != '_' && op->type[op->type.size() - 1] == '_';
 
@@ -1207,17 +1208,17 @@ static void functionize(Graph& graph)
             }
             else
             {
-                alias_index = std::find(graph.operands.begin(), graph.operands.end(), in) - graph.operands.begin();
+                alias_index = std::find(graph->operands.begin(), graph->operands.end(), in) - graph->operands.begin();
             }
 
             if (op->type == "aten::copy_")
             {
                 op->outputs[0]->params["__alias__"] = alias_index;
-                // fprintf(stderr, "operand %s is alias of %s\n", op->outputs[0]->name.c_str(), graph.operands[alias_index]->name.c_str());
+                // fprintf(stderr, "operand %s is alias of %s\n", op->outputs[0]->name.c_str(), graph->operands[alias_index]->name.c_str());
 
                 // set copy output shape as the alias one
-                op->outputs[0]->type = graph.operands[alias_index]->type;
-                op->outputs[0]->shape = graph.operands[alias_index]->shape;
+                op->outputs[0]->type = graph->operands[alias_index]->type;
+                op->outputs[0]->shape = graph->operands[alias_index]->shape;
 
                 continue;
             }
@@ -1225,7 +1226,7 @@ static void functionize(Graph& graph)
             if (is_alias_op(op))
             {
                 op->outputs[0]->params["__alias__"] = alias_index;
-                // fprintf(stderr, "operand %s is alias of %s\n", op->outputs[0]->name.c_str(), graph.operands[alias_index]->name.c_str());
+                // fprintf(stderr, "operand %s is alias of %s\n", op->outputs[0]->name.c_str(), graph->operands[alias_index]->name.c_str());
                 continue;
             }
 
@@ -1235,13 +1236,13 @@ static void functionize(Graph& graph)
                 op->type = op->type.substr(0, op->type.size() - 1);
 
                 // append aten::copy_
-                if (graph.operands[alias_index]->consumers.size() > 1)
+                if (graph->operands[alias_index]->consumers.size() > 1)
                 {
                     Operand* in0 = op->inputs[0];
                     Operand* out0 = op->outputs[0];
 
-                    Operator* op_copy = graph.new_operator_after("aten::copy_", op->name + "_copy", op);
-                    Operand* copy_out = graph.new_operand(op->name + "_copy_out");
+                    Operator* op_copy = graph->new_operator_after("aten::copy_", op->name + "_copy", op);
+                    Operand* copy_out = graph->new_operand(op->name + "_copy_out");
 
                     op_copy->inputs.push_back(in0);
                     op_copy->inputs.push_back(out0);
@@ -1255,13 +1256,13 @@ static void functionize(Graph& graph)
         }
     }
 
-    // graph.save("3.param", "3.bin");
+    // graph->save("3.param", "3.bin");
 
     // 4. scan inplace copy op, collect affacted alias
     {
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type != "aten::copy_")
                 continue;
@@ -1272,16 +1273,16 @@ static void functionize(Graph& graph)
 
             // inplace op output always alias with the input
             const int alias_index = out0->params.at("__alias__").i;
-            Operand* alias_in0 = graph.operands[alias_index];
+            Operand* alias_in0 = graph->operands[alias_index];
 
             // fprintf(stderr, "\n---> %s  for %s\n", op->name.c_str(), alias_in0->name.c_str());
 
             size_t i_advanced = 0;
 
             // 5. look for any op after the inplace op with alias input
-            for (size_t j = i + 1; j < graph.ops.size(); j++)
+            for (size_t j = i + 1; j < graph->ops.size(); j++)
             {
-                Operator* op1 = graph.ops[j];
+                Operator* op1 = graph->ops[j];
 
                 bool affacted = false;
                 for (Operand* x : op1->inputs)
@@ -1309,12 +1310,12 @@ static void functionize(Graph& graph)
                 // 6. collect ops on the chain back to alias
                 std::set<size_t> chainsx_op_indexes;
                 {
-                    size_t op1_index = std::find(graph.ops.begin(), graph.ops.end(), op1) - graph.ops.begin();
+                    size_t op1_index = std::find(graph->ops.begin(), graph->ops.end(), op1) - graph->ops.begin();
 
                     if (op1_index < i - i_advanced)
                     {
                         chainsx_op_indexes.insert(op1_index);
-                        // fprintf(stderr, "affacted op %s for %s\n", op1->name.c_str(), graph.operands[alias_index]->name.c_str());
+                        // fprintf(stderr, "affacted op %s for %s\n", op1->name.c_str(), graph->operands[alias_index]->name.c_str());
                     }
 
                     while (1)
@@ -1328,12 +1329,12 @@ static void functionize(Graph& graph)
                             break;
 
                         op1 = x->producer;
-                        size_t op1_index = std::find(graph.ops.begin(), graph.ops.end(), op1) - graph.ops.begin();
+                        size_t op1_index = std::find(graph->ops.begin(), graph->ops.end(), op1) - graph->ops.begin();
 
                         if (op1_index < i - i_advanced)
                         {
                             chainsx_op_indexes.insert(op1_index);
-                            // fprintf(stderr, "affacted op %s for %s   chained\n", op1->name.c_str(), graph.operands[alias_index]->name.c_str());
+                            // fprintf(stderr, "affacted op %s for %s   chained\n", op1->name.c_str(), graph->operands[alias_index]->name.c_str());
                         }
                     }
                 }
@@ -1344,11 +1345,11 @@ static void functionize(Graph& graph)
                     for (size_t doi : chainsx_op_indexes)
                     {
                         doi -= k;
-                        // fprintf(stderr, "---> move %s after %s\n", graph.ops[doi]->name.c_str(), graph.ops[i - i_advanced]->name.c_str());
+                        // fprintf(stderr, "---> move %s after %s\n", graph->ops[doi]->name.c_str(), graph->ops[i - i_advanced]->name.c_str());
 
                         for (size_t l = doi; l < i - i_advanced; l++)
                         {
-                            std::swap(graph.ops[l], graph.ops[l + 1]);
+                            std::swap(graph->ops[l], graph->ops[l + 1]);
                         }
 
                         k += 1;
@@ -1359,10 +1360,10 @@ static void functionize(Graph& graph)
 
                 // 8. update all alias uses after copy op, retag alias
                 out0->params.erase("__alias__");
-                const int new_alias_index = std::find(graph.operands.begin(), graph.operands.end(), out0) - graph.operands.begin();
-                for (size_t k = i - i_advanced + 1; k < graph.ops.size(); k++)
+                const int new_alias_index = std::find(graph->operands.begin(), graph->operands.end(), out0) - graph->operands.begin();
+                for (size_t k = i - i_advanced + 1; k < graph->ops.size(); k++)
                 {
-                    Operator* op2 = graph.ops[k];
+                    Operator* op2 = graph->ops[k];
 
                     // bool use_in0 = false;
                     for (size_t l = 0; l < op2->inputs.size(); l++)
@@ -1392,18 +1393,18 @@ static void functionize(Graph& graph)
         }
     }
 
-    // graph.save("4.param", "4.bin");
+    // graph->save("4.param", "4.bin");
 
     // 9. clear all alias tag
     {
-        for (Operand* x : graph.operands)
+        for (Operand* x : graph->operands)
         {
             x->params.erase("__alias__");
         }
     }
 }
 
-void pass_level2(Graph& g)
+void pass_level2(std::shared_ptr<pnnx::Graph> g)
 {
     functionize(g);
 

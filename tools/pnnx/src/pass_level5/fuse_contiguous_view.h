@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_contiguous_view(Graph& graph);
+void fuse_contiguous_view(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

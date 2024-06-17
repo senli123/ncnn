@@ -21,7 +21,7 @@
 namespace pnnx {
 
 // add by senli
-void pass_level4(Graph& g, std::set<std::string>& custom_ops)
+void pass_level4(std::shared_ptr<pnnx::Graph> g, std::set<std::string>& custom_ops)
 {
     fuse_custom_op(g, custom_ops);
 

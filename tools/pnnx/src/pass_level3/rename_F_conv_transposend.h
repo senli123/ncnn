@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void rename_F_conv_transposend(Graph& graph);
+void rename_F_conv_transposend(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

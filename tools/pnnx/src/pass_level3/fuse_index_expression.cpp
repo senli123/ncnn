@@ -27,7 +27,6 @@ static void replaceAll(std::string& str, const std::string& from, const std::str
         start_pos += to.length();
     }
 }
-
 static void multi_expr(int depth, std::vector<int>& attr_shape, const int64_t* pdata, std::string& attr_expr, int pre_depth, int& cur_index)
 {
     if(depth == attr_shape.size() - 1)
@@ -133,15 +132,15 @@ static std::string fuse_attribute_expression(Operator* op_expr)
     return expr;
 }
 
-void fuse_index_expression(Graph& graph)
+void fuse_index_expression(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type != "Tensor.index")
                 continue;
@@ -187,7 +186,7 @@ void fuse_index_expression(Graph& graph)
             op2->inputs.clear();
             op2->outputs.clear();
 
-            graph.ops.erase(std::find(graph.ops.begin(), graph.ops.end(), op2));
+            graph->ops.erase(std::find(graph->ops.begin(), graph->ops.end(), op2));
 
             delete op2;
 

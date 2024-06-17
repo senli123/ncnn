@@ -17,6 +17,6 @@
 
 namespace pnnx {
 
-void trans_Stack2Unsqueeze(Graph& graph);
+void trans_Stack2Unsqueeze(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

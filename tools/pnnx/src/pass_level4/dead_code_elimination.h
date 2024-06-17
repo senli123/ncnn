@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void dead_code_elimination(Graph& graph);
+void dead_code_elimination(std::shared_ptr<pnnx::Graph> graph);
 
 }

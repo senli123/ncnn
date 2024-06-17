@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_slice_indices(Graph& graph);
+void fuse_slice_indices(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

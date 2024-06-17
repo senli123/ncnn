@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_adjacent_reshape(Graph& graph);
+void fuse_adjacent_reshape(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

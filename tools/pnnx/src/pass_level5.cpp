@@ -65,7 +65,7 @@
 
 namespace pnnx {
 
-void pass_level5(Graph& g, const std::set<std::string>& foldable_constants, const std::string& foldable_constants_zippath)
+void pass_level5(std::shared_ptr<pnnx::Graph> g, const std::set<std::string>& foldable_constants, const std::string& foldable_constants_zippath)
 {
     eval_expression(g);
 
@@ -134,8 +134,9 @@ void pass_level5(Graph& g, const std::set<std::string>& foldable_constants, cons
 
     eliminate_reshape_shape_expression(g);
     eliminate_noop_expand(g);
-
+#ifdef NDEBUG 
     fuse_channel_shuffle(g);
+#endif  
     fuse_layernorm(g);
     fuse_multiheadattention(g);
     fuse_scaled_dot_product_attention(g);

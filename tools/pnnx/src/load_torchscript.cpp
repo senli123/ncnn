@@ -429,7 +429,8 @@ const torch::jit::Node* find_node_by_kind(const std::shared_ptr<torch::jit::Grap
     return 0;
 }
 
-int load_torchscript(const std::string& ptpath, Graph& pnnx_graph,
+int load_torchscript(const std::string& ptpath, \
+                    std::unordered_map<std::string, std::shared_ptr<pnnx::Graph>>& pnnx_graph_map,
                      const std::string& device,
                      const std::vector<std::vector<int64_t> >& input_shapes,
                      const std::vector<std::string>& input_types,
@@ -544,7 +545,7 @@ int load_torchscript(const std::string& ptpath, Graph& pnnx_graph,
 
     fprintf(stderr, "############# pass_level1\n");
 
-    pnnx::pass_level1(mod, g, module_operators, pnnx_graph);
+    pnnx::pass_level1(mod, g, module_operators, pnnx_graph_map);
 
     return 0;
 }

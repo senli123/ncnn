@@ -55,7 +55,6 @@ public:
         {
             convolution = convolution_mode;
         }
-
         if(!convolution)
         {
             return;
@@ -72,8 +71,6 @@ public:
            
             fprintf(stderr, "Caught an unknown exception\n");
         }  
-
-        op->params["groups"] = convolution->namedInput("groups");
         op->params["in_channels"] = weight.size(1) * op->params["groups"].i;
         op->params["out_channels"] = weight.size(0);
         op->params["kernel_size"] = Parameter{weight.size(2), weight.size(3)};

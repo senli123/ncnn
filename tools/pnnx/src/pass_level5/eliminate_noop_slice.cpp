@@ -20,15 +20,15 @@
 
 namespace pnnx {
 
-void eliminate_noop_slice(Graph& graph)
+void eliminate_noop_slice(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type != "Tensor.slice")
                 continue;
@@ -76,13 +76,13 @@ void eliminate_noop_slice(Graph& graph)
                 slice_out->producer = 0;
                 slice_out->consumers.clear();
 
-                graph.operands.erase(std::find(graph.operands.begin(), graph.operands.end(), slice_out));
+                graph->operands.erase(std::find(graph->operands.begin(), graph->operands.end(), slice_out));
                 delete slice_out;
 
                 op->inputs.clear();
                 op->outputs.clear();
 
-                graph.ops.erase(graph.ops.begin() + i);
+                graph->ops.erase(graph->ops.begin() + i);
                 delete op;
 
                 break;

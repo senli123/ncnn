@@ -42,7 +42,6 @@ static size_t countSubstring(const std::string& str, const std::string& substr) 
   
     return count;  
 } 
-
 static bool type_is_integer(int type)
 {
     if (type == 1) return false;
@@ -477,7 +476,7 @@ Attribute operator+(const Attribute& a, const Attribute& b)
 
 Parameter Parameter::parse_from_string(const std::string& value)
 {
-     if (value.find('%') != std::string::npos)
+    if (value.find('%') != std::string::npos)
     {
         Parameter p;
         p.type = 4;
@@ -566,6 +565,7 @@ Parameter Parameter::parse_from_string(const std::string& value)
     p.i = std::stoi(value);
     return p;
 }
+
 Graph::Graph()
 {
 }
@@ -1023,7 +1023,6 @@ int Graph::save(const std::string& parampath, const std::string& binpath)
 
     return 0;
 }
-
 
 int Graph::save_param(const std::string& parampath, const std::vector<Operator>& input_operators, const std::vector<Operand>& input_operands)
 {

@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void rename_F_convmode(Graph& graph);
+void rename_F_convmode(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

@@ -195,7 +195,7 @@ pnnx.Output             output      1 0 out
     }
 };
 
-void fuse_static_batchnorm(Graph& graph)
+void fuse_static_batchnorm(std::shared_ptr<pnnx::Graph> graph)
 {
     fuse_static_Fbatchnorm_pass_1d a;
     fuse_static_Fbatchnorm_pass_2d b;

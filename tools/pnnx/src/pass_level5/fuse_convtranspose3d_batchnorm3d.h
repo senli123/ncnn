@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_convtranspose3d_batchnorm3d(Graph& graph);
+void fuse_convtranspose3d_batchnorm3d(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

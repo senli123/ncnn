@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void trans_expression2TupleConstruct(Graph& graph);
+void trans_expression2TupleConstruct(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

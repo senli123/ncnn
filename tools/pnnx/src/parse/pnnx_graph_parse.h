@@ -24,11 +24,14 @@ public:
      * @return false
      */
     bool getNvpPnnxModel(const std::string& pt_path, \
+     const std::string& save_dir, \
     const std::string& input_shape, \
     const std::string& custom_op_path, \
     const std::string& custom_op_py,
     const std::string& start_nodes = "",
     const std::string& end_nodes = "");
+
+   
     
     /**
      * @brief load pnnx graph

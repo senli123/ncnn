@@ -19,16 +19,16 @@
 
 namespace pnnx {
 
-void trans_expression2TupleConstruct(Graph& graph)
+void trans_expression2TupleConstruct(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
-
+            Operator* op = graph->ops[i];
+            
             if (op->type != "pnnx.Expression")
                 continue;
             // get expr
@@ -67,13 +67,13 @@ void trans_expression2TupleConstruct(Graph& graph)
                         }
                         input->producer = 0;
                         input->consumers.clear();
-                        graph.operands.erase(std::find(graph.operands.begin(), graph.operands.end(), input));
+                        graph->operands.erase(std::find(graph->operands.begin(), graph->operands.end(), input));
                         delete input;
 
                         op->inputs.clear();
                         op->outputs.clear();
 
-                        graph.ops.erase(graph.ops.begin() + i);
+                        graph->ops.erase(graph->ops.begin() + i);
                         delete op;
                     }
                     else

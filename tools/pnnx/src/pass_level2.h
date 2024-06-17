@@ -58,9 +58,9 @@ public:
 #define REGISTER_GLOBAL_PNNX_GRAPH_REWRITER_PASS(CLASS, PRIORITY) \
     static GraphRewriterPassRegister g_global_pnnx_graphrewriterpass_##CLASS##_register(new CLASS, PRIORITY);
 
-void pnnx_graph_rewrite(Graph& graph, const GraphRewriterPass* pass, int& opindex);
+void pnnx_graph_rewrite(std::shared_ptr<pnnx::Graph> graph, const GraphRewriterPass* pass, int& opindex);
 
-void pass_level2(Graph& g);
+void pass_level2(std::shared_ptr<pnnx::Graph> g);
 
 } // namespace pnnx
 

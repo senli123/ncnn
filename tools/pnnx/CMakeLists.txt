@@ -29,6 +29,13 @@ set(CMAKE_CXX_STANDARD 14)
 # set(CMAKE_BUILD_TYPE relwithdebinfo)
 # set(CMAKE_BUILD_TYPE release)
 
+string(TOUPPER "${CMAKE_BUILD_TYPE}" BUILD_TYPE_UPPER) 
+if(${BUILD_TYPE_UPPER} STREQUAL "DEBUG")  
+  add_compile_definitions(DEBUG)  
+else()  
+  add_compile_definitions(NDEBUG)  
+endif()  
+
 option(PNNX_COVERAGE "build for coverage" OFF)
 
 # set(Torch_INSTALL_DIR "/home/nihui/osd/pnnx/install" CACHE STRING "")

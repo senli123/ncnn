@@ -77,7 +77,7 @@ pnnx.Output             output      1 0 out
     }
 };
 
-void fuse_channel_shuffle(Graph& graph)
+void fuse_channel_shuffle(std::shared_ptr<pnnx::Graph> graph)
 {
     fuse_channel_shuffle_pass a;
     fuse_channel_shuffle_pass_1 b;

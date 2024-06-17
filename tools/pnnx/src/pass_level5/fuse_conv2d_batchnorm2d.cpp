@@ -127,7 +127,7 @@ pnnx.Output             output      1 0 out
     }
 };
 
-void fuse_conv2d_batchnorm2d(Graph& graph)
+void fuse_conv2d_batchnorm2d(std::shared_ptr<pnnx::Graph> graph)
 {
     fuse_conv2d_batchnorm2d_pass a;
     int opindex = 0;

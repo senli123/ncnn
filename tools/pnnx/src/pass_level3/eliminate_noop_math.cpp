@@ -150,16 +150,16 @@ static bool operator_is_all_constant(const Operator* op, float vf, int vi)
     return false;
 }
 
-void eliminate_noop_math(Graph& graph)
+void eliminate_noop_math(std::shared_ptr<pnnx::Graph> graph)
 {
     for (;;)
     {
         bool need_eliminate = false;
 
         // build expression via reverse order
-        for (int i = (int)graph.ops.size() - 1; i >= 0; i--)
+        for (int i = (int)graph->ops.size() - 1; i >= 0; i--)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             int identity_input_id = 0;
             if (op->type == "aten::add")
@@ -342,13 +342,13 @@ void eliminate_noop_math(Graph& graph)
             math_out->producer = 0;
             math_out->consumers.clear();
 
-            graph.operands.erase(std::find(graph.operands.begin(), graph.operands.end(), math_out));
+            graph->operands.erase(std::find(graph->operands.begin(), graph->operands.end(), math_out));
             delete math_out;
 
             op->inputs.clear();
             op->outputs.clear();
 
-            graph.ops.erase(graph.ops.begin() + i);
+            graph->ops.erase(graph->ops.begin() + i);
             delete op;
 
             break;

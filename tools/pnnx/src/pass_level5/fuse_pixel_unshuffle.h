@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_pixel_unshuffle(Graph& graph);
+void fuse_pixel_unshuffle(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

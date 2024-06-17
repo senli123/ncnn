@@ -20,7 +20,7 @@
 
 namespace pnnx {
 
-void fold_constants(Graph& graph, const std::set<std::string>& foldable_constants, const std::string& foldable_constants_zippath)
+void fold_constants(std::shared_ptr<pnnx::Graph> graph, const std::set<std::string>& foldable_constants, const std::string& foldable_constants_zippath)
 {
     if (foldable_constants.empty())
         return;
@@ -28,9 +28,9 @@ void fold_constants(Graph& graph, const std::set<std::string>& foldable_constant
     StoreZipReader zip;
     zip.open(foldable_constants_zippath);
 
-    for (size_t i = 0; i < graph.operands.size(); i++)
+    for (size_t i = 0; i < graph->operands.size(); i++)
     {
-        Operand* operand = graph.operands[i];
+        Operand* operand = graph->operands[i];
         const std::string& name = operand->name;
 
         if (foldable_constants.find(name) == foldable_constants.end())
@@ -41,7 +41,7 @@ void fold_constants(Graph& graph, const std::set<std::string>& foldable_constant
             continue;
 
         // replace producer with attribute
-        Operator* op_new = graph.new_operator_before("pnnx.Attribute", std::string("pnnx_fold_") + name, op);
+        Operator* op_new = graph->new_operator_before("pnnx.Attribute", std::string("pnnx_fold_") + name, op);
 
         op_new->attrs["data"] = Attribute();
 

@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_opnto1_tensors(Graph& graph);
+void fuse_opnto1_tensors(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

@@ -105,7 +105,7 @@ pnnx.Output             output      1 0 out
     }
 };
 
-void fuse_static_instancenorm(Graph& graph)
+void fuse_static_instancenorm(std::shared_ptr<pnnx::Graph> graph)
 {
     fuse_static_Finstancenorm_pass_1d a;
     fuse_static_Finstancenorm_pass_2d b;

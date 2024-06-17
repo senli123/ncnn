@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void attribute_unpooling(Graph& g);
+void attribute_unpooling(std::shared_ptr<pnnx::Graph> g);
 
 } // namespace pnnx

@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_index_expression(Graph& graph);
+void fuse_index_expression(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

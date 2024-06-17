@@ -37,7 +37,7 @@
 
 namespace pnnx {
 
-void pass_level3(Graph& g, const std::set<std::string>& foldable_constants, const std::string& foldable_constants_zippath)
+void pass_level3(std::shared_ptr<pnnx::Graph> g, const std::set<std::string>& foldable_constants, const std::string& foldable_constants_zippath)
 {
     assign_unique_name(g);
 

@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void eliminate_noop_view_reshape(Graph& graph);
+void eliminate_noop_view_reshape(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

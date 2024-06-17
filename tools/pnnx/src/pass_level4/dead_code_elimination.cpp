@@ -16,16 +16,16 @@
 
 namespace pnnx {
 
-void dead_code_elimination(Graph& graph)
+void dead_code_elimination(std::shared_ptr<pnnx::Graph> graph)
 {
     // dead op elimination
     for (;;)
     {
         bool need_eliminate = false;
 
-        for (int i = (int)graph.ops.size() - 1; i >= 0; i--)
+        for (int i = (int)graph->ops.size() - 1; i >= 0; i--)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type == "pnnx.Output")
                 continue;
@@ -56,7 +56,7 @@ void dead_code_elimination(Graph& graph)
 
                 op->outputs.clear();
 
-                graph.ops.erase(graph.ops.begin() + i);
+                graph->ops.erase(graph->ops.begin() + i);
                 delete op;
 
                 break;
@@ -72,9 +72,9 @@ void dead_code_elimination(Graph& graph)
     {
         bool need_eliminate = false;
 
-        for (int i = (int)graph.operands.size() - 1; i >= 0; i--)
+        for (int i = (int)graph->operands.size() - 1; i >= 0; i--)
         {
-            Operand* operand = graph.operands[i];
+            Operand* operand = graph->operands[i];
 
             int consumers = (int)operand->consumers.size();
 
@@ -84,7 +84,7 @@ void dead_code_elimination(Graph& graph)
 
                 //                 fprintf(stderr, "delete operand %s\n", operand->name.c_str());
 
-                graph.operands.erase(graph.operands.begin() + i);
+                graph->operands.erase(graph->operands.begin() + i);
                 delete operand;
 
                 break;

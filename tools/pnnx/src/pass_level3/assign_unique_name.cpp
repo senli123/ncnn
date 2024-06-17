@@ -17,16 +17,16 @@
 
 namespace pnnx {
 
-void assign_unique_name(Graph& graph)
+void assign_unique_name(std::shared_ptr<pnnx::Graph> graph)
 {
     // assign unique name for all operators
     {
         std::unordered_set<std::string> names;
         int make_unique_index = 0;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
             const std::string& name = op->name;
 
             if (names.find(name) == names.end())

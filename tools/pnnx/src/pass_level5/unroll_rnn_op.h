@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void unroll_rnn_op(Graph& graph);
+void unroll_rnn_op(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

@@ -19,7 +19,7 @@
 namespace pnnx {
 
 //add by senli
-void fuse_custom_op(Graph& graph, std::set<std::string>& custom_ops)
+void fuse_custom_op(std::shared_ptr<pnnx::Graph> graph, std::set<std::string>& custom_ops)
 {
     //add by senli
     //std::set<std::string> custom_ops;
@@ -29,9 +29,9 @@ void fuse_custom_op(Graph& graph, std::set<std::string>& custom_ops)
         bool need_fuse = false;
 
         // fuse in reverse order
-        for (int i = (int)graph.ops.size() - 1; i >= 0; i--)
+        for (int i = (int)graph->ops.size() - 1; i >= 0; i--)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type.find("::") == std::string::npos)
                 continue;
@@ -46,7 +46,16 @@ void fuse_custom_op(Graph& graph, std::set<std::string>& custom_ops)
             need_fuse = true;
             //add by senli
             // op->type = std::string("pnnx.custom_op.") + op_type_namespace + '.' + op_type_name;
-            op->type = std::string("torch.ops.") + op_type_namespace + '.' + op_type_name;
+            if (op_type_namespace == "torchvision")
+            {
+                op->type = op_type_namespace + ".ops." + op_type_name;
+            }
+            else
+            {
+                op->type = std::string("torch.ops.") + op_type_namespace + '.' + op_type_name;
+            }
+            
+
             custom_ops.insert(op->type);
             std::vector<Operand*> new_inputs;
             std::vector<std::string> new_inputnames;

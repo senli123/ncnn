@@ -717,6 +717,41 @@ TORCH_LIBRARY(upfirdn2d_op, m) {
     ]
 }
 ```
+
+2. 通过pnnx可执行文件直接进行c++调试
+```json
+
+{
+    "version": "0.2.0",
+    "configurations": [
+       
+        {
+            "name": "msvc",
+            "type": "cppvsdbg",
+            "request": "launch",
+            // "program": "${workspaceFolder}/bin/test_ReduceL1_wrapper.exe",
+            "program": "${workspaceFolder}/python/build/lib.win-amd64-cpython-38/pnnx/Debug/pnnx.exe",
+            
+        // "args": ["D:\\project\\programs\\ncnn_project\\nvppnnx\\model_zoo\\segformer\\model.pt",
+        // "inputshape=[1,3,512,512]","start_nodes=597,591,585,579","end_nodes=598"], 
+
+        "args": ["D:/project/programs/my_project/tests/test_python/test_op/model_zoo3/script_test/test.pt",
+        "D:/project/programs/ncnn_project/nvppnnx/model_zoo/script_test",
+        "inputshape=[2,3],[1]i64"], 
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            //  "preLaunchTask": "task of build with msvc"
+        }
+]
+} 
+```
+
+修改了输入参数，第二个参数为保存pnnx的路径。
+
+新增"extract_model_name"输入参数，指定拆分网络的name，可以是主网络也可是是子网络。
+
 # 添加自定义算子实例
 在 mytests文件夹下添加了自定义算子实例，可以参考
 |op_name|path|

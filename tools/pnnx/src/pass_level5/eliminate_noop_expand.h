@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void eliminate_noop_expand(Graph& graph);
+void eliminate_noop_expand(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

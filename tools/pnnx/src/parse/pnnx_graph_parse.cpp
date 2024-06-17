@@ -2,23 +2,23 @@
 int main(int argc, char** argv);
 namespace pnnx_graph {
 
-bool PnnxGraph::getNvpPnnxModel(const std::string& pt_path, const std::string& input_shape, const std::string& custom_op_path,
-                                const std::string& custom_op_py, const std::string& start_nodes, const std::string& end_nodes)
+bool PnnxGraph::getNvpPnnxModel(const std::string& pt_path, const std::string& save_dir, const std::string& input_shape, const std::string& custom_op_path,
+                                const std::string& custom_op_py, const std::string& start_nodes, const std::string& end_nodes, const std::string& extract_model_name)
 
 {
     int argc;
     char** argv;
     if (custom_op_path != "None" && custom_op_py != "None")
     {
-        argc = 7;
+        argc = 9;
     }
     else if (custom_op_path != "None" && custom_op_py == "None")
     {
-        argc = 6;
+        argc = 8;
     }
     else if (custom_op_path == "None" && custom_op_py == "None")
     {
-        argc = 5;
+        argc = 7;
     }
 
     argv = new char*[argc];
@@ -30,36 +30,44 @@ bool PnnxGraph::getNvpPnnxModel(const std::string& pt_path, const std::string& i
     argv[1] = new char[pt_path.size() + 1];
     std::strcpy(argv[1], pt_path.c_str());
 
+    argv[2] = new char[save_dir.size() + 1];
+    std::strcpy(argv[2], save_dir.c_str());
+
     //insert input_shape
     std::string input_shape_info = "inputshape=" + input_shape;
-    argv[2] = new char[input_shape_info.size() + 1];
-    std::strcpy(argv[2], input_shape_info.c_str());
+    argv[3] = new char[input_shape_info.size() + 1];
+    std::strcpy(argv[3], input_shape_info.c_str());
 
     if (custom_op_path != "None")
     {
         //insert custom_op
         std::string custom_op_info = "customop=" + custom_op_path;
-        argv[3] = new char[custom_op_info.size() + 1];
-        std::strcpy(argv[3], custom_op_info.c_str());
+        argv[4] = new char[custom_op_info.size() + 1];
+        std::strcpy(argv[4], custom_op_info.c_str());
     }
 
     if (custom_op_py != "None")
     {
         //insert custom_op_py
         std::string custom_op_py_info = "customop_infer_py=" + custom_op_py;
-        argv[4] = new char[custom_op_py_info.size() + 1];
-        std::strcpy(argv[4], custom_op_py_info.c_str());
+        argv[5] = new char[custom_op_py_info.size() + 1];
+        std::strcpy(argv[5], custom_op_py_info.c_str());
     }
 
     //insert start nodes
     std::string stard_nodes_info = "start_nodes=" + start_nodes;
-    argv[argc - 2] = new char[stard_nodes_info.size() + 1];
-    std::strcpy( argv[argc - 2], stard_nodes_info.c_str());
+    argv[argc - 3] = new char[stard_nodes_info.size() + 1];
+    std::strcpy( argv[argc - 3], stard_nodes_info.c_str());
 
     //insert end nodes
     std::string end_nodes_info = "end_nodes=" + end_nodes;
-    argv[argc - 1] = new char[end_nodes_info.size() + 1];
-    std::strcpy( argv[argc - 1], end_nodes_info.c_str());
+    argv[argc - 2] = new char[end_nodes_info.size() + 1];
+    std::strcpy( argv[argc - 2], end_nodes_info.c_str());
+
+    //insert extract_model_name
+    std::string custom_op_py_info = "extract_model_name=" + custom_op_py;
+    argv[argc - 1] = new char[custom_op_py_info.size() + 1];
+    std::strcpy(argv[argc - 2], custom_op_py_info.c_str());
 
     int result = main(argc, argv);
    
@@ -99,7 +107,6 @@ bool PnnxGraph::loadModel(const std::string& param_path, const std::string& bin_
         return false;
     }
     
-    std::cout << "123" << bin_path << std::endl;
     //parse all operator
     std::vector<Operator> operators_;
     std::vector<Operand> operands_;

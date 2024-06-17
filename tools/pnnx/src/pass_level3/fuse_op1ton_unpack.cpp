@@ -18,15 +18,15 @@
 
 namespace pnnx {
 
-void fuse_op1ton_unpack(Graph& graph)
+void fuse_op1ton_unpack(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type != "torch.chunk" && op->type != "torch.split" && op->type != "torch.unbind" && op->type != "torch.tensor_split")
                 continue;
@@ -56,7 +56,7 @@ void fuse_op1ton_unpack(Graph& graph)
             op2->inputs.clear();
             op2->outputs.clear();
 
-            graph.ops.erase(std::find(graph.ops.begin(), graph.ops.end(), op2));
+            graph->ops.erase(std::find(graph->ops.begin(), graph->ops.end(), op2));
 
             delete op2;
 

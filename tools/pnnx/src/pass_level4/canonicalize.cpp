@@ -16,11 +16,11 @@
 
 namespace pnnx {
 
-void canonicalize(Graph& graph)
+void canonicalize(std::shared_ptr<pnnx::Graph> graph)
 {
     int i = 0;
 
-    for (Operator* op : graph.ops)
+    for (Operator* op : graph->ops)
     {
         for (Operand* operand : op->outputs)
         {

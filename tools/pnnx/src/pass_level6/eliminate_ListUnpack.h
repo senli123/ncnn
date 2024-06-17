@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void eliminate_ListUnpack(Graph& graph);
+void eliminate_ListUnpack(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

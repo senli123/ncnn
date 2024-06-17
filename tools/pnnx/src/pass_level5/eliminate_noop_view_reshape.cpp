@@ -19,15 +19,15 @@
 
 namespace pnnx {
 
-void eliminate_noop_view_reshape(Graph& graph)
+void eliminate_noop_view_reshape(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type != "Tensor.view" && op->type != "Tensor.reshape")
                 continue;
@@ -78,13 +78,13 @@ void eliminate_noop_view_reshape(Graph& graph)
             op_out->producer = 0;
             op_out->consumers.clear();
 
-            graph.operands.erase(std::find(graph.operands.begin(), graph.operands.end(), op_out));
+            graph->operands.erase(std::find(graph->operands.begin(), graph->operands.end(), op_out));
             delete op_out;
 
             op->inputs.clear();
             op->outputs.clear();
 
-            graph.ops.erase(graph.ops.begin() + i);
+            graph->ops.erase(graph->ops.begin() + i);
             delete op;
 
             break;

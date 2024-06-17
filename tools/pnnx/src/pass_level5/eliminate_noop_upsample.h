@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void eliminate_noop_upsample(Graph& graph);
+void eliminate_noop_upsample(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

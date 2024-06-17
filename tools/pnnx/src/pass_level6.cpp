@@ -19,10 +19,11 @@
 #include "pass_level6/trans_Stack2Unsqueeze.h"
 #include "pass_level6/trans_ReshapeAs2Reshape.h"
 #include "pass_level6/trans_TensorTypeAs2TensorTo.h"
-
+#include "pass_level6/fold_Loop.h"
+#include "config.h"
 namespace pnnx {
 
-void pass_level6(Graph& g, const std::set<std::string>& foldable_constants, const std::string& foldable_constants_zippath)
+void pass_level6(std::shared_ptr<pnnx::Graph> g, const std::set<std::string>& foldable_constants, const std::string& foldable_constants_zippath)
 {
     eliminate_ListUnpack(g);
     fprintf(stderr, "############# finish eliminate_ListUnpack\n");
@@ -30,10 +31,16 @@ void pass_level6(Graph& g, const std::set<std::string>& foldable_constants, cons
     fprintf(stderr, "############# finish trans_expression2TupleConstruct\n");
     trans_Stack2Unsqueeze(g);
     fprintf(stderr, "############# finish trans_Stack2Unsqueeze\n");
-    trans_ReshapeAs2Reshape(g);
-    fprintf(stderr, "############# finish trans_ReshapeAs2Reshape\n");
+    if(!dynamic_network)
+    {
+        trans_ReshapeAs2Reshape(g);
+        fprintf(stderr, "############# finish trans_ReshapeAs2Reshape\n");
+    }
+   
     trans_TensorTypeAs2TensorTo(g);
     fprintf(stderr, "############# finish trans_TensorTypeAs2TensorTo\n");
+    fold_Loop(g);
+    fprintf(stderr, "############# finish fold_Loop\n");
 }
 
 } // namespace pnnx

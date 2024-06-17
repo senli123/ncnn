@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_constant_expression(Graph& graph);
+void fuse_constant_expression(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

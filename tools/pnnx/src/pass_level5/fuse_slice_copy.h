@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_slice_copy(Graph& graph);
+void fuse_slice_copy(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

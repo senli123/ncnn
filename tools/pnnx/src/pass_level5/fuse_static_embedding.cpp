@@ -43,7 +43,7 @@ pnnx.Output             output      1 0 out
     }
 };
 
-void fuse_static_embedding(Graph& graph)
+void fuse_static_embedding(std::shared_ptr<pnnx::Graph> graph)
 {
     fuse_static_Fembedding_pass a;
     int opindex = 0;

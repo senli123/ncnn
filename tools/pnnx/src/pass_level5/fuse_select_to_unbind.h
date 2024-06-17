@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_select_to_unbind(Graph& graph);
+void fuse_select_to_unbind(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

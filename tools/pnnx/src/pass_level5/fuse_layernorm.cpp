@@ -76,7 +76,7 @@ pnnx.Output             output      1 0 out
     }
 };
 
-void fuse_layernorm(Graph& graph)
+void fuse_layernorm(std::shared_ptr<pnnx::Graph> graph)
 {
     fuse_layernorm_pass a;
     int opindex = 0;

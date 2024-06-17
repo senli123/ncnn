@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_slice_to_tensor_split(Graph& graph);
+void fuse_slice_to_tensor_split(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

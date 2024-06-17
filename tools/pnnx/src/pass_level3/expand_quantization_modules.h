@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void expand_quantization_modules(Graph& graph);
+void expand_quantization_modules(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

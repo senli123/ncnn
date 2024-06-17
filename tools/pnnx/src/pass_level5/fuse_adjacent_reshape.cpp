@@ -19,15 +19,15 @@
 
 namespace pnnx {
 
-void fuse_adjacent_reshape(Graph& graph)
+void fuse_adjacent_reshape(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (int i = (int)graph.ops.size() - 1; i > 0; i--)
+        for (int i = (int)graph->ops.size() - 1; i > 0; i--)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             // look for Tensor.view / Tensor.reshape / torch.squeeze / torch.unsqueeze chain
             if (op->type != "Tensor.view" && op->type != "Tensor.reshape" && op->type != "torch.squeeze" && op->type != "torch.unsqueeze")
@@ -84,13 +84,13 @@ void fuse_adjacent_reshape(Graph& graph)
                 op0_out->producer = 0;
                 op0_out->consumers.clear();
 
-                graph.operands.erase(std::find(graph.operands.begin(), graph.operands.end(), op0_out));
+                graph->operands.erase(std::find(graph->operands.begin(), graph->operands.end(), op0_out));
                 delete op0_out;
 
                 op0->inputs.clear();
                 op0->outputs.clear();
 
-                graph.ops.erase(std::find(graph.ops.begin(), graph.ops.end(), op0));
+                graph->ops.erase(std::find(graph->ops.begin(), graph->ops.end(), op0));
                 delete op0;
             }
 

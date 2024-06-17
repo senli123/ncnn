@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_dynamic_adaptive_pool(Graph& graph);
+void fuse_dynamic_adaptive_pool(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

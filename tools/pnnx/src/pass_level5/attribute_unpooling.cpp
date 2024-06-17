@@ -18,15 +18,15 @@
 
 namespace pnnx {
 
-void attribute_unpooling(Graph& graph)
+void attribute_unpooling(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type != "pnnx.Attribute")
                 continue;
@@ -43,13 +43,13 @@ void attribute_unpooling(Graph& graph)
             {
                 Operator* x = attr->consumers[i];
 
-                Operator* op2 = graph.new_operator_after("pnnx.Attribute", op->name + "_" + std::to_string(i), op);
+                Operator* op2 = graph->new_operator_after("pnnx.Attribute", op->name + "_" + std::to_string(i), op);
 
                 op2->inputnames = op->inputnames;
                 op2->params = op->params;
                 op2->attrs = op->attrs;
 
-                Operand* attr2 = graph.new_operand(attr->name + "_" + std::to_string(i));
+                Operand* attr2 = graph->new_operand(attr->name + "_" + std::to_string(i));
 
                 attr2->type = attr->type;
                 attr2->shape = attr->shape;

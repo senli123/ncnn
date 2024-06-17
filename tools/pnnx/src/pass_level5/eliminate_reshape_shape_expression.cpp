@@ -97,15 +97,15 @@ static std::string build_expr(const std::vector<std::string>& expr_tokens)
     return expr;
 }
 
-void eliminate_reshape_shape_expression(Graph& graph)
+void eliminate_reshape_shape_expression(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type != "Tensor.view" && op->type != "Tensor.reshape")
                 continue;
@@ -172,13 +172,13 @@ void eliminate_reshape_shape_expression(Graph& graph)
 
                 Operand* op_expr_out = op_expr->outputs[0];
 
-                graph.operands.erase(std::find(graph.operands.begin(), graph.operands.end(), op_expr_out));
+                graph->operands.erase(std::find(graph->operands.begin(), graph->operands.end(), op_expr_out));
                 delete op_expr_out;
 
                 op_expr->inputs.clear();
                 op_expr->outputs.clear();
 
-                graph.ops.erase(std::find(graph.ops.begin(), graph.ops.end(), op_expr));
+                graph->ops.erase(std::find(graph->ops.begin(), graph->ops.end(), op_expr));
                 delete op_expr;
             }
 
@@ -189,9 +189,9 @@ void eliminate_reshape_shape_expression(Graph& graph)
             break;
     }
 
-    for (size_t i = 0; i < graph.ops.size(); i++)
+    for (size_t i = 0; i < graph->ops.size(); i++)
     {
-        Operator* op = graph.ops[i];
+        Operator* op = graph->ops[i];
 
         if (op->type != "Tensor.view" && op->type != "Tensor.reshape")
             continue;

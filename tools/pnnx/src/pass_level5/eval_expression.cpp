@@ -626,9 +626,9 @@ static std::string canonicalize_arguments(const Operator* op, std::vector<Operan
     return r;
 }
 
-void eval_expression(Graph& graph)
+void eval_expression(std::shared_ptr<pnnx::Graph> graph)
 {
-    for (Operator* op : graph.ops)
+    for (Operator* op : graph->ops)
     {
         if (op->type != "pnnx.Expression")
             continue;

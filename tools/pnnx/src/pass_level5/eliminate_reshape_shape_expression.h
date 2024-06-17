@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void eliminate_reshape_shape_expression(Graph& graph);
+void eliminate_reshape_shape_expression(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

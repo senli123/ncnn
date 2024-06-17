@@ -47,7 +47,7 @@ pnnx.Output             output      1 0 out
     }
 };
 
-void fuse_static_groupnorm(Graph& graph)
+void fuse_static_groupnorm(std::shared_ptr<pnnx::Graph> graph)
 {
     fuse_static_Fgroupnorm_pass a;
     int opindex = 0;

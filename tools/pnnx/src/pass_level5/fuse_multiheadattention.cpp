@@ -1368,7 +1368,7 @@ pnnx.Output             output      1 0 out
     }
 };
 
-void fuse_multiheadattention(Graph& graph)
+void fuse_multiheadattention(std::shared_ptr<pnnx::Graph> graph)
 {
 #if TORCH_VERSION_MAJOR >= 2 || (TORCH_VERSION_MAJOR >= 1 && TORCH_VERSION_MINOR >= 9)
     fuse_multiheadattention_pass a;

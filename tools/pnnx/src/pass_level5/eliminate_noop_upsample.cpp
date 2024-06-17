@@ -19,15 +19,15 @@
 
 namespace pnnx {
 
-void eliminate_noop_upsample(Graph& graph)
+void eliminate_noop_upsample(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type != "F.upsample" && op->type != "F.upsample_bilinear" && op->type != "F.upsample_nearest" && op->type != "F.interpolate"
                     && op->type != "nn.Upsample" && op->type != "nn.UpsamplingBilinear2d" && op->type != "nn.UpsamplingNearest2d")
@@ -104,13 +104,13 @@ void eliminate_noop_upsample(Graph& graph)
                 upsample_out->producer = 0;
                 upsample_out->consumers.clear();
 
-                graph.operands.erase(std::find(graph.operands.begin(), graph.operands.end(), upsample_out));
+                graph->operands.erase(std::find(graph->operands.begin(), graph->operands.end(), upsample_out));
                 delete upsample_out;
 
                 op->inputs.clear();
                 op->outputs.clear();
 
-                graph.ops.erase(graph.ops.begin() + i);
+                graph->ops.erase(graph->ops.begin() + i);
                 delete op;
 
                 break;

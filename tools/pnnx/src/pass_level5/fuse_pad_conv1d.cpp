@@ -382,7 +382,7 @@ pnnx.Output             output      1 0 out
     }
 };
 
-void fuse_pad_conv1d(Graph& graph)
+void fuse_pad_conv1d(std::shared_ptr<pnnx::Graph> graph)
 {
     fuse_pad_conv1d_pass a;
     fuse_pad_conv1d_pass_1 b;

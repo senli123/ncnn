@@ -19,15 +19,15 @@
 
 namespace pnnx {
 
-void eliminate_maxpool_indices(Graph& graph)
+void eliminate_maxpool_indices(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type != "F.adaptive_max_pool1d" && op->type != "F.adaptive_max_pool2d" && op->type != "F.adaptive_max_pool3d"
                     && op->type != "F.max_pool1d" && op->type != "F.max_pool2d" && op->type != "F.max_pool3d"
@@ -56,7 +56,7 @@ void eliminate_maxpool_indices(Graph& graph)
 
             op_indices->producer = 0;
 
-            graph.operands.erase(std::find(graph.operands.begin(), graph.operands.end(), op_indices));
+            graph->operands.erase(std::find(graph->operands.begin(), graph->operands.end(), op_indices));
             delete op_indices;
 
             break;

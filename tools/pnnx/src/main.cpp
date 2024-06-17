@@ -18,7 +18,9 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <unordered_map> 
 
+#include "config.h"
 #include "ir.h"
 #include "pass_level2.h"
 #include "pass_level3.h"
@@ -33,7 +35,7 @@
 #endif
 
 #include "pass_ncnn.h"
-#include "save_ncnn.h"
+// #include "save_ncnn.h"
 
 #if BUILD_PNNX2ONNX
 #include "save_onnx.h"
@@ -206,18 +208,18 @@ int main(int argc, char** argv)
     }
 
     std::string ptpath = std::string(argv[1]);
-
+    std::string save_dir = std::string(argv[2]);
     std::string ptbase = get_basename(ptpath);
 
-    std::string pnnxparampath = ptbase + ".pnnx.param";
-    std::string pnnxbinpath = ptbase + ".pnnx.bin";
-    std::string pnnxpypath = ptbase + "_pnnx.py";
+    // std::string pnnxparampath = ptbase + ".pnnx.param";
+    // std::string pnnxbinpath = ptbase + ".pnnx.bin";
+    // std::string pnnxpypath = ptbase + "_pnnx.py";
     // add by senli[pnnx_infer]
-    std::string pnnxinferpath = ptbase + "_pnnx_infer.py";
-    std::string pnnxonnxpath = ptbase + ".pnnx.onnx";
-    std::string ncnnparampath = ptbase + ".ncnn.param";
-    std::string ncnnbinpath = ptbase + ".ncnn.bin";
-    std::string ncnnpypath = ptbase + "_ncnn.py";
+    // std::string pnnxinferpath = ptbase + "_pnnx_infer.py";
+    // std::string pnnxonnxpath = ptbase + ".pnnx.onnx";
+    // std::string ncnnparampath = ptbase + ".ncnn.param";
+    // std::string ncnnbinpath = ptbase + ".ncnn.bin";
+    // std::string ncnnpypath = ptbase + "_ncnn.py";
     int fp16 = 1;
     int optlevel = 2;
     std::string device = "cpu";
@@ -231,8 +233,8 @@ int main(int argc, char** argv)
     std::string customop_infer_py = "None";
     std::vector<std::string> start_nodes;
     std::vector<std::string> end_nodes;
-
-    for (int i = 2; i < argc; i++)
+    std::string extract_model_name = "model";
+    for (int i = 3; i < argc; i++)
     {
         // key=value
         char* kv = argv[i];
@@ -249,24 +251,24 @@ int main(int argc, char** argv)
         const char* key = kv;
         char* value = eqs + 1;
 
-        if (strcmp(key, "pnnxparam") == 0)
-            pnnxparampath = std::string(value);
-        if (strcmp(key, "pnnxbin") == 0)
-            pnnxbinpath = std::string(value);
-        if (strcmp(key, "pnnxpy") == 0)
-            pnnxpypath = std::string(value);
-        // add by senli[pnnx_infer]
-        if (strcmp(key, "pnnxinferpy") == 0)
-            pnnxinferpath = std::string(value);
+        // if (strcmp(key, "pnnxparam") == 0)
+        //     pnnxparampath = std::string(value);
+        // if (strcmp(key, "pnnxbin") == 0)
+        //     pnnxbinpath = std::string(value);
+        // if (strcmp(key, "pnnxpy") == 0)
+        //     pnnxpypath = std::string(value);
+        // // add by senli[pnnx_infer]
+        // if (strcmp(key, "pnnxinferpy") == 0)
+        //     pnnxinferpath = std::string(value);
 
-        if (strcmp(key, "pnnxonnx") == 0)
-            pnnxonnxpath = std::string(value);
-        if (strcmp(key, "ncnnparam") == 0)
-            ncnnparampath = std::string(value);
-        if (strcmp(key, "ncnnbin") == 0)
-            ncnnbinpath = std::string(value);
-        if (strcmp(key, "ncnnpy") == 0)
-            ncnnpypath = std::string(value);
+        // if (strcmp(key, "pnnxonnx") == 0)
+        //     pnnxonnxpath = std::string(value);
+        // if (strcmp(key, "ncnnparam") == 0)
+        //     ncnnparampath = std::string(value);
+        // if (strcmp(key, "ncnnbin") == 0)
+        //     ncnnbinpath = std::string(value);
+        // if (strcmp(key, "ncnnpy") == 0)
+        //     ncnnpypath = std::string(value);
         if (strcmp(key, "fp16") == 0)
             fp16 = atoi(value);
         if (strcmp(key, "optlevel") == 0)
@@ -288,20 +290,25 @@ int main(int argc, char** argv)
             parse_string_list(value, start_nodes);
         if (strcmp(key, "end_nodes") == 0)
             parse_string_list(value, end_nodes);
+        if (strcmp(key, "extract_model_name") == 0)
+            extract_model_name = value;
+            
     }
 
     // print options
     {
-        fprintf(stderr, "pnnxparam = %s\n", pnnxparampath.c_str());
-        fprintf(stderr, "pnnxbin = %s\n", pnnxbinpath.c_str());
-        fprintf(stderr, "pnnxpy = %s\n", pnnxpypath.c_str());
-        // add by senli[pnnx_infer]
-        fprintf(stderr, "pnnxinferpy = %s\n", pnnxinferpath.c_str());
+        // fprintf(stderr, "pnnxparam = %s\n", pnnxparampath.c_str());
+        // fprintf(stderr, "pnnxbin = %s\n", pnnxbinpath.c_str());
+        // fprintf(stderr, "pnnxpy = %s\n", pnnxpypath.c_str());
+        // // add by senli[pnnx_infer]
+        // fprintf(stderr, "pnnxinferpy = %s\n", pnnxinferpath.c_str());
 
-        fprintf(stderr, "pnnxonnx = %s\n", pnnxonnxpath.c_str());
-        fprintf(stderr, "ncnnparam = %s\n", ncnnparampath.c_str());
-        fprintf(stderr, "ncnnbin = %s\n", ncnnbinpath.c_str());
-        fprintf(stderr, "ncnnpy = %s\n", ncnnpypath.c_str());
+        // fprintf(stderr, "pnnxonnx = %s\n", pnnxonnxpath.c_str());
+        // fprintf(stderr, "ncnnparam = %s\n", ncnnparampath.c_str());
+        // fprintf(stderr, "ncnnbin = %s\n", ncnnbinpath.c_str());
+        // fprintf(stderr, "ncnnpy = %s\n", ncnnpypath.c_str());
+        
+        fprintf(stderr, "save_dir = %s\n", save_dir.c_str());
         fprintf(stderr, "fp16 = %d\n", fp16);
         fprintf(stderr, "optlevel = %d\n", optlevel);
         fprintf(stderr, "device = %s\n", device.c_str());
@@ -326,13 +333,20 @@ int main(int argc, char** argv)
         fprintf(stderr, "end_nodes = ");
         print_string_list(end_nodes);
         fprintf(stderr, "\n");
+        fprintf(stderr, "extract_model_name = %s\n", extract_model_name.c_str());
+        fprintf(stderr, "\n");
+        
     }
 
     std::set<std::string> foldable_constants;
     std::string foldable_constants_zippath = ptbase + ".foldable_constants.zip";
 
-    pnnx::Graph pnnx_graph;
-    load_torchscript(ptpath, pnnx_graph,
+    if(input_shapes2.size() > 0)
+    {
+        dynamic_network = true;
+    }
+    std::unordered_map<std::string, std::shared_ptr<pnnx::Graph>> pnnx_graph_map;
+    load_torchscript(ptpath, pnnx_graph_map,
                      device, input_shapes, input_types,
                      input_shapes2, input_types2,
                      customop_modules, module_operators,
@@ -341,76 +355,99 @@ int main(int argc, char** argv)
     // load_onnx(ptpath.c_str(), pnnx_graph);
 
     //     g->dump();
+    // #ifdef NDEBUG 
+    // loop all graph tp pass
+    for (const auto& graph_pair : pnnx_graph_map) { 
+        
+        std::string graph_name = graph_pair.first;
+        if(graph_name == "src")
+            graph_name = "model";
+        std::string pnnxparampath = save_dir + "/" + graph_name + ".pnnx.param";
+        std::string pnnxbinpath = save_dir + "/" + graph_name + ".pnnx.bin";
+        std::string pnnxpypath = save_dir + "/" + graph_name + "_pnnx.py";
+        std::string pnnxinferpath = save_dir + "/" + graph_name + "_pnnx_infer.py";
 
-    fprintf(stderr, "############# pass_level2\n");
-
-    pnnx::pass_level2(pnnx_graph);
-
-    pnnx_graph.save("debug.param", "debug.bin");
-    // add by senli
-    std::set<std::string> custom_ops;
-
-    if (optlevel >= 1)
-    {
-        fprintf(stderr, "############# pass_level3\n");
-
-        pnnx::pass_level3(pnnx_graph, foldable_constants, foldable_constants_zippath);
-
-        fprintf(stderr, "############# pass_level4\n");
-
+        fprintf(stderr, "pnnxparam = %s\n", pnnxparampath.c_str());
+        fprintf(stderr, "pnnxbin = %s\n", pnnxbinpath.c_str());
+        fprintf(stderr, "pnnxpy = %s\n", pnnxpypath.c_str());
+        fprintf(stderr, "pnnxinferpy = %s\n", pnnxinferpath.c_str());
+        
+        fprintf(stderr, "############# pass_level2 at %s\n", graph_name.c_str());
+        pnnx::pass_level2(graph_pair.second);
+        
+        // pnnx_graph.save("debug.param", "debug.bin");
         // add by senli
-        pnnx::pass_level4(pnnx_graph, custom_ops);
-    }
+        std::set<std::string> custom_ops;
 
-    pnnx_graph.save("debug2.param", "debug2.bin");
+        if (optlevel >= 1)
+        {
+            fprintf(stderr, "############# pass_level3 at %s\n",  graph_name.c_str());
 
-    if (optlevel >= 2)
-    {
-        fprintf(stderr, "############# pass_level5\n");
+            pnnx::pass_level3(graph_pair.second, foldable_constants, foldable_constants_zippath);
 
-        pnnx::pass_level5(pnnx_graph, foldable_constants, foldable_constants_zippath);
+            fprintf(stderr, "############# pass_level4 at %s\n",  graph_name.c_str());
 
-        // add by senli 20240321
-        fprintf(stderr, "############# pass_level6\n");
+            // add by senli
+            pnnx::pass_level4(graph_pair.second, custom_ops);
+        }
 
-        pnnx::pass_level6(pnnx_graph, foldable_constants, foldable_constants_zippath);
-    }
+        // pnnx_graph.save("debug2.param", "debug2.bin");
 
+        if (optlevel >= 2)
+        {
+            fprintf(stderr, "############# pass_level5 at %s\n",  graph_name.c_str());
+
+            pnnx::pass_level5(graph_pair.second, foldable_constants, foldable_constants_zippath);
+
+            // add by senli 20240321
+            fprintf(stderr, "############# pass_level6 at %s\n",  graph_name.c_str());
+
+            pnnx::pass_level6(graph_pair.second, foldable_constants, foldable_constants_zippath);
+        }
+
+        
+
+        // extract_sub_graph
+        if(extract_model_name == graph_name)
+        {
+            fprintf(stderr, "############# start to extract_sub_graph in %s\n", graph_name.c_str());
+            int extract_flag = graph_pair.second->extract_sub_graph(start_nodes, end_nodes);
+            if(extract_flag == -1)
+            {
+                fprintf(stderr, "############# failed to extract_sub_graph\n");
+            }
+        }
+        
+        graph_pair.second->save(pnnxparampath, pnnxbinpath);
+
+        graph_pair.second->python(pnnxpypath, pnnxbinpath);
+        //add by senli[pnnx_infer]
+
+        graph_pair.second->python_infer(pnnxinferpath, pnnxbinpath, customop_modules, custom_ops, customop_infer_py, save_dir);
+
+        #if BUILD_PNNX2ONNX
+            pnnx::save_onnx(pnnx_graph, pnnxonnxpath.c_str(), fp16);
+        #else
+            fprintf(stderr, "pnnx build without onnx-zero support, skip saving onnx\n");
+        #endif
+        // #endif  
+        // if (optlevel >= 2)
+        // {
+        //     fprintf(stderr, "############# pass_ncnn\n");
+
+        //     pnnx::pass_ncnn(pnnx_graph, module_operators);
+
+        //     pnnx::save_ncnn(pnnx_graph, ncnnparampath, ncnnbinpath, ncnnpypath, fp16);
+        // }
+
+        //     pnnx::Graph pnnx_graph2;
+
+        //     pnnx_graph2.load("pnnx.param", "pnnx.bin");
+        //     pnnx_graph2.save("pnnx2.param", "pnnx2.bin");
+
+    }  
     // delete foldable_constants_zippath
     remove(foldable_constants_zippath.c_str());
     
-    // extract_sub_graph
-    int extract_flag = pnnx_graph.extract_sub_graph(start_nodes, end_nodes);
-    if(extract_flag == -1)
-    {
-        fprintf(stderr, "############# failed to extract_sub_graph\n");
-    }
-
-    pnnx_graph.save(pnnxparampath, pnnxbinpath);
-
-    pnnx_graph.python(pnnxpypath, pnnxbinpath);
-    //add by senli[pnnx_infer]
-    pnnx_graph.python_infer(pnnxinferpath, pnnxbinpath, customop_modules, custom_ops, customop_infer_py);
-
-#if BUILD_PNNX2ONNX
-    pnnx::save_onnx(pnnx_graph, pnnxonnxpath.c_str(), fp16);
-#else
-    fprintf(stderr, "pnnx build without onnx-zero support, skip saving onnx\n");
-#endif
-
-    //     if (optlevel >= 2)
-    // {
-    //     fprintf(stderr, "############# pass_ncnn\n");
-
-    //     pnnx::pass_ncnn(pnnx_graph, module_operators);
-
-    //     pnnx::save_ncnn(pnnx_graph, ncnnparampath, ncnnbinpath, ncnnpypath, fp16);
-    // }
-
-    //     pnnx::Graph pnnx_graph2;
-
-    //     pnnx_graph2.load("pnnx.param", "pnnx.bin");
-    //     pnnx_graph2.save("pnnx2.param", "pnnx2.bin");
-
     return 0;
 }

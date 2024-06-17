@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_static_layernorm(Graph& graph);
+void fuse_static_layernorm(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_static_linear(Graph& graph);
+void fuse_static_linear(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

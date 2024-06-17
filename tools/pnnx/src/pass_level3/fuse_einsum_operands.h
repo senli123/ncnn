@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_einsum_operands(Graph& graph);
+void fuse_einsum_operands(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

@@ -14,12 +14,13 @@
 
 #ifndef PNNX_LOAD_TORCHSCRIPT_H
 #define PNNX_LOAD_TORCHSCRIPT_H
-
+#include <unordered_map> 
 #include "ir.h"
 
 namespace pnnx {
 
-int load_torchscript(const std::string& ptpath, Graph& g,
+int load_torchscript(const std::string& ptpath, \
+                    std::unordered_map<std::string, std::shared_ptr<pnnx::Graph>>& pnnx_graph_map,
                      const std::string& device,
                      const std::vector<std::vector<int64_t> >& input_shapes,
                      const std::vector<std::string>& input_types,

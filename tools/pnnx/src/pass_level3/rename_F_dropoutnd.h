@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void rename_F_dropoutnd(Graph& graph);
+void rename_F_dropoutnd(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

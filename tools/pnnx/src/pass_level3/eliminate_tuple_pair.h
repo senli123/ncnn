@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void eliminate_tuple_pair(Graph& graph);
+void eliminate_tuple_pair(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

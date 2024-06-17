@@ -19,15 +19,15 @@
 
 namespace pnnx {
 
-void eliminate_dropout(Graph& graph)
+void eliminate_dropout(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type != "F.alpha_dropout" && op->type != "F.dropout" && op->type != "F.dropout2d" && op->type != "F.dropout3d" && op->type != "F.feature_alpha_dropout" && op->type != "nn.AlphaDropout" && op->type != "nn.Dropout" && op->type != "nn.Dropout2d" && op->type != "nn.Dropout3d")
                 continue;
@@ -58,13 +58,13 @@ void eliminate_dropout(Graph& graph)
             dropout_out->producer = 0;
             dropout_out->consumers.clear();
 
-            graph.operands.erase(std::find(graph.operands.begin(), graph.operands.end(), dropout_out));
+            graph->operands.erase(std::find(graph->operands.begin(), graph->operands.end(), dropout_out));
             delete dropout_out;
 
             op->inputs.clear();
             op->outputs.clear();
 
-            graph.ops.erase(graph.ops.begin() + i);
+            graph->ops.erase(graph->ops.begin() + i);
             delete op;
 
             break;

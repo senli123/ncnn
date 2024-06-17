@@ -20,15 +20,15 @@
 
 namespace pnnx {
 
-void fuse_slice_to_tensor_split(Graph& graph)
+void fuse_slice_to_tensor_split(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type != "Tensor.slice")
                 continue;
@@ -99,7 +99,7 @@ void fuse_slice_to_tensor_split(Graph& graph)
                 if (!op2)
                     break;
 
-                if (std::find(graph.ops.begin(), graph.ops.end(), op2) < std::find(graph.ops.begin(), graph.ops.end(), cur))
+                if (std::find(graph->ops.begin(), graph->ops.end(), op2) < std::find(graph->ops.begin(), graph->ops.end(), cur))
                     cur = op2;
 
                 int end2 = op2->params.at("ends").ai[0];
@@ -128,7 +128,7 @@ void fuse_slice_to_tensor_split(Graph& graph)
             matched = true;
 
             // delete all slice ops and replace with tensor_split
-            Operator* op_tensor_split = graph.new_operator_before("torch.tensor_split", op->name, cur);
+            Operator* op_tensor_split = graph->new_operator_before("torch.tensor_split", op->name, cur);
             op_tensor_split->params["dim"] = dim;
             op_tensor_split->params["indices"] = tensor_split_indices;
 
@@ -148,7 +148,7 @@ void fuse_slice_to_tensor_split(Graph& graph)
 
             for (size_t j = 0; j < slice_n_ops.size(); j++)
             {
-                graph.ops.erase(std::find(graph.ops.begin(), graph.ops.end(), slice_n_ops[j]));
+                graph->ops.erase(std::find(graph->ops.begin(), graph->ops.end(), slice_n_ops[j]));
                 delete slice_n_ops[j];
             }
 

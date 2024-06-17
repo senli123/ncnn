@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void assign_unique_name(Graph& graph);
+void assign_unique_name(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

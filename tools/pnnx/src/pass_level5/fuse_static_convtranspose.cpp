@@ -240,7 +240,7 @@ pnnx.Output             output      1 0 out
     }
 };
 
-void fuse_static_convtranspose(Graph& graph)
+void fuse_static_convtranspose(std::shared_ptr<pnnx::Graph> graph)
 {
     fuse_static_Fconvtranspose1d_pass a;
     fuse_static_Fconvtranspose1d_pass_2 b;

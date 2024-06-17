@@ -32,11 +32,11 @@ static void replaceAll(std::string& str, const std::string& from, const std::str
     }
 }
 
-void normalize_einsum_equation(Graph& graph)
+void normalize_einsum_equation(std::shared_ptr<pnnx::Graph> graph)
 {
-    for (size_t i = 0; i < graph.ops.size(); i++)
+    for (size_t i = 0; i < graph->ops.size(); i++)
     {
-        Operator* op = graph.ops[i];
+        Operator* op = graph->ops[i];
 
         if (op->type != "torch.einsum")
             continue;

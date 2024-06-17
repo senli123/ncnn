@@ -27,7 +27,7 @@
 #include <iostream>
 #include "storezip.h"
 #include "utils.h"
-
+#include <list>
 namespace pnnx {
 
 static bool type_is_integer(int type)
@@ -2785,7 +2785,8 @@ std::vector<std::string> getDirectoryPath(const std::string& filePath)
 
 int Graph::python_infer(const std::string& pypath, const std::string& binpath,
                         const std::vector<std::string>& customop_modules, std::set<std::string>& custom_ops,
-                        std::string& customop_infer_py)
+                        std::string& customop_infer_py,
+                        std::string& save_dir)
 {
     FILE* pyfp = fopen(pypath.c_str(), "wb");
     if (!pyfp)
@@ -2801,6 +2802,7 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,
     fprintf(pyfp, "import torch\n");
     fprintf(pyfp, "import torch.nn as nn\n");
     fprintf(pyfp, "import torch.nn.functional as F\n");
+    fprintf(pyfp, "import importlib\n");
     fprintf(pyfp, "try:\n");
     fprintf(pyfp, "    import torchvision\n");
     fprintf(pyfp, "except:\n");
@@ -2867,6 +2869,15 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,
     }
     fprintf(pyfp, "\n");
 
+    // load_module
+    {
+        fprintf(pyfp, "def load_module(module_path):\n");
+        fprintf(pyfp, "    spec = importlib.util.spec_from_file_location('module', module_path)\n");
+        fprintf(pyfp, "    module = importlib.util.module_from_spec(spec)\n");
+        fprintf(pyfp, "    spec.loader.exec_module(module)\n");
+        fprintf(pyfp, "    return module\n");
+        fprintf(pyfp, "\n");
+    }
     //add by senli[pnnx_infer]
     fprintf(pyfp, "class Model(nn.Module):\n");
     fprintf(pyfp, "    def __init__(self, bin_path, infer_flag = False):\n");
@@ -2880,6 +2891,18 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,
         fprintf(pyfp, "        self.infer_flag = infer_flag\n");
         for (const Operator* op : ops)
         {
+            if(op->type == "pnnx.Loop")
+            {
+                std::string op_name = op->name;
+
+                std::string subModelBinPath = save_dir + "/" + op_name + ".pnnx.bin";
+                std::string subModelInferPath = save_dir + "/" + op_name + "_pnnx_infer.py";
+                fprintf(pyfp, "        %s = load_module('%s')\n", (op_name + "_Mod").c_str(), subModelInferPath.c_str());
+                fprintf(pyfp, "        %s = getattr(%s, 'Model')\n", (op_name + "_Cls").c_str(), (op_name + "_Mod").c_str());
+                fprintf(pyfp, "        %s = %s('%s', True)\n", ("self." + op_name + "_Obj").c_str(), (op_name + "_Cls").c_str(),  subModelBinPath.c_str());
+                fprintf(pyfp, "        %s.eval()\n", ("self." + op_name + "_Obj").c_str());
+                continue;
+            }
             if (op->type.substr(0, 3) != "nn." && op->type.substr(0, 16) != "torchvision.ops.")
                 continue;
 
@@ -3234,6 +3257,7 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,
     {
         for (const Operator* op : ops)
         {
+            
             if (op->type == "pnnx.Input" || op->type == "pnnx.Output")
                 continue;
 
@@ -3241,6 +3265,46 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,
                 continue;
 
             fprintf(pyfp, "        ");
+
+            if(op->type == "pnnx.Loop")
+            {
+                std::string condition_expr = op->params.at("condition").s;
+                int iter_num = op->params.at("iter_num").i;
+                std::string op_name = op->name;
+                std::vector<Operand*> inputs = op->inputs;
+                std::vector<Operand*> outputs = op->outputs;
+                std::string output_list = "";
+                std::string input_list = "";
+                std::string real_input_list = "";
+                for(int index = 0; index < outputs.size(); index++)
+                {
+                    std::string cur_output_name = sanitize_identifier(op->outputs[index]->name);
+                    std::string cur_input_name = sanitize_identifier(op->inputs[index]->name);
+                    output_list  = output_list + "v_" + cur_output_name;
+                    input_list  = input_list + "v_" + cur_input_name;
+                    if (index + 1 != outputs.size())
+                    {
+                        output_list = output_list + ", ";
+                        input_list = input_list + ", ";
+                    }
+                        
+                }
+                for(int index = 0; index < inputs.size(); index++)
+                {
+                    std::string cur_input_name = sanitize_identifier(op->inputs[index]->name);
+                    real_input_list  = real_input_list + "v_" + cur_input_name;
+                    if (index + 1 != inputs.size())
+                        real_input_list = real_input_list + ", ";
+                }
+                fprintf(pyfp, "%s = %s\n", output_list.c_str(), input_list.c_str());
+                fprintf(pyfp, "        condition = %s\n", condition_expr.c_str());
+                fprintf(pyfp, "        i = 0\n");
+                fprintf(pyfp, "        while condition and i < %s:\n", std::to_string(iter_num).c_str());
+                fprintf(pyfp, "            %s = %s\n", input_list.c_str(), output_list.c_str());
+                fprintf(pyfp, "            %s = %s(%s)\n", output_list.c_str(), ("self." + op_name + "_Obj").c_str(), real_input_list.c_str());
+                fprintf(pyfp, "            i += 1\n");
+                continue;
+            }
 
             if (op->type == "pnnx.Expression")
             {
@@ -4417,6 +4481,16 @@ Operand* Graph::get_operand(const std::string& name)
     return 0;
 }
 
+Operator* Graph::get_operator(const std::string& name)
+{
+    for (Operator* r : ops)
+    {
+        if (r->name == name)
+            return r;
+    }
+
+    return 0;
+}
 const Operand* Graph::get_operand(const std::string& name) const
 {
     for (const Operand* r : operands)

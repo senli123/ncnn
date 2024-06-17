@@ -676,7 +676,7 @@ pnnx.Output             output      2 0 out indices
     }
 };
 
-void fuse_dynamic_adaptive_pool(Graph& graph)
+void fuse_dynamic_adaptive_pool(std::shared_ptr<pnnx::Graph> graph)
 {
     fuse_dynamic_adaptive_pool_pass a;
     fuse_dynamic_adaptive_pool_pass_1 b;

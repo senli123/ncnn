@@ -145,7 +145,7 @@ pnnx.Output             output      1 0 out
     }
 };
 
-void fuse_convtranspose3d_batchnorm3d(Graph& graph)
+void fuse_convtranspose3d_batchnorm3d(std::shared_ptr<pnnx::Graph> graph)
 {
     fuse_convtranspose3d_batchnorm3d_pass a;
     int opindex = 0;

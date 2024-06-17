@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_static_instancenorm(Graph& graph);
+void fuse_static_instancenorm(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

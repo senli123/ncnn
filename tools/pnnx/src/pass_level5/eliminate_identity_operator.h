@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void eliminate_identity_operator(Graph& graph);
+void eliminate_identity_operator(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

@@ -19,24 +19,24 @@
 
 namespace pnnx {
 
-void eliminate_identity_operator(Graph& graph)
+void eliminate_identity_operator(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op0 = graph.ops[i];
+            Operator* op0 = graph->ops[i];
 
             if (op0->type == "pnnx.Input" || op0->type == "pnnx.Output" || op0->type == "pnnx.Attribute" || op0->type == "torch.clone")
                 continue;
 
             Operator* op1 = 0;
 
-            for (size_t j = i + 1; j < graph.ops.size(); j++)
+            for (size_t j = i + 1; j < graph->ops.size(); j++)
             {
-                op1 = graph.ops[j];
+                op1 = graph->ops[j];
 
                 if (op1->type == "pnnx.Input" || op1->type == "pnnx.Output" || op0->type == "pnnx.Attribute" || op1->type == "torch.clone")
                     continue;
@@ -97,14 +97,14 @@ void eliminate_identity_operator(Graph& graph)
             // delete op1 and its output operands
             for (int j = 0; j < output_count; j++)
             {
-                graph.operands.erase(std::find(graph.operands.begin(), graph.operands.end(), op1->outputs[j]));
+                graph->operands.erase(std::find(graph->operands.begin(), graph->operands.end(), op1->outputs[j]));
                 delete op1->outputs[j];
             }
 
             op1->inputs.clear();
             op1->outputs.clear();
 
-            graph.ops.erase(std::find(graph.ops.begin(), graph.ops.end(), op1));
+            graph->ops.erase(std::find(graph->ops.begin(), graph->ops.end(), op1));
             delete op1;
 
             break;

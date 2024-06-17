@@ -137,7 +137,7 @@ pnnx.Output             output      1 0 out
     }
 };
 
-void fuse_scaled_dot_product_attention(Graph& graph)
+void fuse_scaled_dot_product_attention(std::shared_ptr<pnnx::Graph> graph)
 {
 #if TORCH_VERSION_MAJOR >= 2
     fuse_scaled_dot_product_attention_pass a;

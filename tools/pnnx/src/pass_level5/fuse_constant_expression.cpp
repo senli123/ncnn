@@ -20,15 +20,15 @@
 
 namespace pnnx {
 
-void fuse_constant_expression(Graph& graph)
+void fuse_constant_expression(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type != "pnnx.Expression")
                 continue;
@@ -94,13 +94,13 @@ void fuse_constant_expression(Graph& graph)
                 // delete expression and expr_output
 
                 expr_output->producer = 0;
-                graph.operands.erase(std::find(graph.operands.begin(), graph.operands.end(), expr_output));
+                graph->operands.erase(std::find(graph->operands.begin(), graph->operands.end(), expr_output));
                 delete expr_output;
 
                 op->inputs.clear();
                 op->outputs.clear();
 
-                graph.ops.erase(std::find(graph.ops.begin(), graph.ops.end(), op));
+                graph->ops.erase(std::find(graph->ops.begin(), graph->ops.end(), op));
                 delete op;
             }
 

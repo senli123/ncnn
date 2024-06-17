@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_static_embedding(Graph& graph);
+void fuse_static_embedding(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

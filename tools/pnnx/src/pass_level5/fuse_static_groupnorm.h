@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_static_groupnorm(Graph& graph);
+void fuse_static_groupnorm(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

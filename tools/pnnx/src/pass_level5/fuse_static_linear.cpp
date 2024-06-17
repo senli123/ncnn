@@ -108,7 +108,7 @@ pnnx.Output             output      1 0 out
     }
 };
 
-void fuse_static_linear(Graph& graph)
+void fuse_static_linear(std::shared_ptr<pnnx::Graph> graph)
 {
     fuse_static_Flinear_pass_3 a3;
 

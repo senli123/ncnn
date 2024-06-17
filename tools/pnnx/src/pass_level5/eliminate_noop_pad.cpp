@@ -19,15 +19,15 @@
 
 namespace pnnx {
 
-void eliminate_noop_pad(Graph& graph)
+void eliminate_noop_pad(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type != "F.pad")
                 continue;
@@ -76,13 +76,13 @@ void eliminate_noop_pad(Graph& graph)
             pad_out->producer = 0;
             pad_out->consumers.clear();
 
-            graph.operands.erase(std::find(graph.operands.begin(), graph.operands.end(), pad_out));
+            graph->operands.erase(std::find(graph->operands.begin(), graph->operands.end(), pad_out));
             delete pad_out;
 
             op->inputs.clear();
             op->outputs.clear();
 
-            graph.ops.erase(graph.ops.begin() + i);
+            graph->ops.erase(graph->ops.begin() + i);
             delete op;
 
             break;

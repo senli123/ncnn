@@ -64,3 +64,9 @@ dev.1.0.18.20240613
 
 dev.1.0.19.20240614
 1. Add extracting sub graph function
+
+dev.1.0.20.20240617
+1. Add loop op parse function
+
+dev.1.0.21.20240619
+1. Support export sub_model 

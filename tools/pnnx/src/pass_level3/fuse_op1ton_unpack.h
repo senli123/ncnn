@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_op1ton_unpack(Graph& graph);
+void fuse_op1ton_unpack(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

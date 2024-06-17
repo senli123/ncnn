@@ -18,15 +18,15 @@
 
 namespace pnnx {
 
-void expand_quantization_modules(Graph& graph)
+void expand_quantization_modules(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type == "nn.intrinsic.quantized.ConvReLU2d")
             {
@@ -48,19 +48,19 @@ void expand_quantization_modules(Graph& graph)
             // insert new operator before all output consumers
             const Operator* cur = 0;
             {
-                int cur_index = graph.ops.size() - 1;
+                int cur_index = graph->ops.size() - 1;
                 for (auto& c : op->outputs[0]->consumers)
                 {
-                    int c_index = std::find(graph.ops.begin(), graph.ops.end(), c) - graph.ops.begin();
+                    int c_index = std::find(graph->ops.begin(), graph->ops.end(), c) - graph->ops.begin();
                     cur_index = std::min(cur_index, c_index);
                 }
 
-                cur = graph.ops[cur_index];
+                cur = graph->ops[cur_index];
             }
 
-            Operator* op_relu = graph.new_operator_before("nn.ReLU", op->name + "_relu", cur);
+            Operator* op_relu = graph->new_operator_before("nn.ReLU", op->name + "_relu", cur);
 
-            Operand* r0 = graph.new_operand(op->name + "_norelu");
+            Operand* r0 = graph->new_operand(op->name + "_norelu");
 
             r0->producer = op;
             r0->consumers.push_back(op_relu);

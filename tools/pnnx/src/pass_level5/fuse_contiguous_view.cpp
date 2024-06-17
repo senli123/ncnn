@@ -69,7 +69,7 @@ pnnx.Output             output      1 0 out
     }
 };
 
-void fuse_contiguous_view(Graph& graph)
+void fuse_contiguous_view(std::shared_ptr<pnnx::Graph> graph)
 {
     fuse_contiguous_view_pass a;
     fuse_contiguous_view_pass_1 b;

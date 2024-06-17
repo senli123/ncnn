@@ -19,15 +19,15 @@
 
 namespace pnnx {
 
-void fuse_select_to_unbind(Graph& graph)
+void fuse_select_to_unbind(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type != "Tensor.select")
                 continue;
@@ -86,7 +86,7 @@ void fuse_select_to_unbind(Graph& graph)
             matched = true;
 
             // delete all select ops and replace with unbind
-            Operator* op_unbind = graph.new_operator_before("torch.unbind", op->name, op);
+            Operator* op_unbind = graph->new_operator_before("torch.unbind", op->name, op);
             op_unbind->params["dim"] = dim;
 
             op_unbind->inputs.push_back(op_in);
@@ -105,7 +105,7 @@ void fuse_select_to_unbind(Graph& graph)
 
             for (int j = 0; j < select_dimsize; j++)
             {
-                graph.ops.erase(std::find(graph.ops.begin(), graph.ops.end(), select_n_ops[j]));
+                graph->ops.erase(std::find(graph->ops.begin(), graph->ops.end(), select_n_ops[j]));
                 delete select_n_ops[j];
             }
 

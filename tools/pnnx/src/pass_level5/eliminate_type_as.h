@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void eliminate_type_as(Graph& graph);
+void eliminate_type_as(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

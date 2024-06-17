@@ -17,6 +17,6 @@
 
 namespace pnnx {
 
-void trans_ReshapeAs2Reshape(Graph& graph);
+void trans_ReshapeAs2Reshape(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

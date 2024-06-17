@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void canonicalize(Graph& graph);
+void canonicalize(std::shared_ptr<pnnx::Graph> graph);
 
 }

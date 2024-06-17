@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_pad_conv1d(Graph& graph);
+void fuse_pad_conv1d(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

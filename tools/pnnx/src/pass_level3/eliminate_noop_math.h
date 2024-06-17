@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void eliminate_noop_math(Graph& graph);
+void eliminate_noop_math(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

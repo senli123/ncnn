@@ -18,15 +18,15 @@
 
 namespace pnnx {
 
-void unroll_rnn_op(Graph& graph)
+void unroll_rnn_op(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type != "nn.RNN" && op->type != "nn.LSTM" && op->type != "nn.GRU")
                 continue;
@@ -56,7 +56,7 @@ void unroll_rnn_op(Graph& graph)
             {
                 std::string opname = op->name + "_chunk_in_hidden";
 
-                Operator* op1 = graph.new_operator_before("torch.chunk", opname, op);
+                Operator* op1 = graph->new_operator_before("torch.chunk", opname, op);
 
                 op1->params["chunks"] = num_layers;
                 op1->params["dim"] = 0;
@@ -67,7 +67,7 @@ void unroll_rnn_op(Graph& graph)
 
                 for (int j = 0; j < num_layers; j++)
                 {
-                    Operand* r0 = graph.new_operand(op1->name + "_in_hidden_" + std::to_string(j));
+                    Operand* r0 = graph->new_operand(op1->name + "_in_hidden_" + std::to_string(j));
                     r0->producer = op1;
                     op1->outputs.push_back(r0);
 
@@ -78,7 +78,7 @@ void unroll_rnn_op(Graph& graph)
             {
                 std::string opname = op->name + "_chunk_in_cell";
 
-                Operator* op1 = graph.new_operator_before("torch.chunk", opname, op);
+                Operator* op1 = graph->new_operator_before("torch.chunk", opname, op);
 
                 op1->params["chunks"] = num_layers;
                 op1->params["dim"] = 0;
@@ -89,7 +89,7 @@ void unroll_rnn_op(Graph& graph)
 
                 for (int j = 0; j < num_layers; j++)
                 {
-                    Operand* r0 = graph.new_operand(op1->name + "_in_cell_" + std::to_string(j));
+                    Operand* r0 = graph->new_operand(op1->name + "_in_cell_" + std::to_string(j));
                     r0->producer = op1;
                     op1->outputs.push_back(r0);
 
@@ -103,7 +103,7 @@ void unroll_rnn_op(Graph& graph)
             {
                 std::string opname = op->name + "_unroll_" + std::to_string(j);
 
-                Operator* op1 = graph.new_operator_before(op->type, opname, op);
+                Operator* op1 = graph->new_operator_before(op->type, opname, op);
 
                 op1->params = op->params;
                 op1->params["num_layers"] = 1;
@@ -148,14 +148,14 @@ void unroll_rnn_op(Graph& graph)
                 }
                 else
                 {
-                    Operand* r0 = graph.new_operand(op1->name + "_out");
+                    Operand* r0 = graph->new_operand(op1->name + "_out");
                     r0->producer = op1;
                     op1->outputs.push_back(r0);
                 }
 
                 if (has_output_hidden)
                 {
-                    Operand* r1 = graph.new_operand(op1->name + "_out_hidden");
+                    Operand* r1 = graph->new_operand(op1->name + "_out_hidden");
                     r1->producer = op1;
                     op1->outputs.push_back(r1);
 
@@ -163,7 +163,7 @@ void unroll_rnn_op(Graph& graph)
                 }
                 if (has_output_cell)
                 {
-                    Operand* r1 = graph.new_operand(op1->name + "_out_cell");
+                    Operand* r1 = graph->new_operand(op1->name + "_out_cell");
                     r1->producer = op1;
                     op1->outputs.push_back(r1);
 
@@ -209,7 +209,7 @@ void unroll_rnn_op(Graph& graph)
             {
                 std::string opname = op->name + "_cat_out_hidden";
 
-                Operator* op1 = graph.new_operator_before("torch.cat", opname, op);
+                Operator* op1 = graph->new_operator_before("torch.cat", opname, op);
 
                 op1->params["dim"] = 0;
 
@@ -227,7 +227,7 @@ void unroll_rnn_op(Graph& graph)
             {
                 std::string opname = op->name + "_cat_out_cell";
 
-                Operator* op1 = graph.new_operator_before("torch.cat", opname, op);
+                Operator* op1 = graph->new_operator_before("torch.cat", opname, op);
 
                 op1->params["dim"] = 0;
 
@@ -245,7 +245,7 @@ void unroll_rnn_op(Graph& graph)
             op->inputs.clear();
             op->outputs.clear();
 
-            graph.ops.erase(std::find(graph.ops.begin(), graph.ops.end(), op));
+            graph->ops.erase(std::find(graph->ops.begin(), graph->ops.end(), op));
 
             delete op;
 

@@ -133,7 +133,7 @@ static bool operand_maybe_tensor(const Operand* operand)
     return true;
 }
 
-static void fuse_expression(Graph& graph, Operand* operand, std::string& expr, std::vector<Operand*>& inputs, const std::set<std::string>& foldable_constants, StoreZipReader& zip, bool checksubgraph = true)
+static void fuse_expression(std::shared_ptr<pnnx::Graph> graph, Operand* operand, std::string& expr, std::vector<Operand*>& inputs, const std::set<std::string>& foldable_constants, StoreZipReader& zip, bool checksubgraph = true)
 {
     // fprintf(stderr, "fuse_expression %s\n", operand->name.c_str());
 
@@ -728,7 +728,7 @@ DEFAULT:
     }
 }
 
-void fuse_expression(Graph& graph, const std::set<std::string>& foldable_constants, const std::string& foldable_constants_zippath)
+void fuse_expression(std::shared_ptr<pnnx::Graph> graph, const std::set<std::string>& foldable_constants, const std::string& foldable_constants_zippath)
 {
     StoreZipReader zip;
     zip.open(foldable_constants_zippath);
@@ -740,9 +740,9 @@ void fuse_expression(Graph& graph, const std::set<std::string>& foldable_constan
         bool need_fuse = false;
 
         // build expression via reverse order
-        for (int i = (int)graph.ops.size() - 1; i >= 0; i--)
+        for (int i = (int)graph->ops.size() - 1; i >= 0; i--)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type == "prim::Constant")
             {

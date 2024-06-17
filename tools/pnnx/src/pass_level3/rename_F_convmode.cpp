@@ -17,11 +17,11 @@
 
 namespace pnnx {
 
-void rename_F_convmode(Graph& graph)
+void rename_F_convmode(std::shared_ptr<pnnx::Graph> graph)
 {
-    for (size_t i = 0; i < graph.ops.size(); i++)
+    for (size_t i = 0; i < graph->ops.size(); i++)
     {
-        Operator* op = graph.ops[i];
+        Operator* op = graph->ops[i];
 
         if (op->type != "F.convmode")
             continue;

@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_channel_shuffle(Graph& graph);
+void fuse_channel_shuffle(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

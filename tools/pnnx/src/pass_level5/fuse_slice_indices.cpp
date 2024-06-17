@@ -22,15 +22,15 @@
 
 namespace pnnx {
 
-void fuse_slice_indices(Graph& graph)
+void fuse_slice_indices(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (int i = (int)graph.ops.size() - 1; i >= 0; i--)
+        for (int i = (int)graph->ops.size() - 1; i >= 0; i--)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type != "Tensor.slice" && op->type != "Tensor.select")
                 continue;
@@ -158,10 +158,10 @@ void fuse_slice_indices(Graph& graph)
             Operator* op_ends = 0;
             Operator* op_steps = 0;
             Operator* op_selects = 0;
-            if (!static_starts) op_starts = graph.new_operator_before("pnnx.SliceIndexes", op->name + "_ncnnstarts", op);
-            if (!static_ends) op_ends = graph.new_operator_before("pnnx.SliceIndexes", op->name + "_ncnnends", op);
-            if (!static_steps) op_steps = graph.new_operator_before("pnnx.SliceIndexes", op->name + "_ncnnsteps", op);
-            if (!static_selects) op_selects = graph.new_operator_before("pnnx.SliceIndexes", op->name + "_ncnnselects", op);
+            if (!static_starts) op_starts = graph->new_operator_before("pnnx.SliceIndexes", op->name + "_ncnnstarts", op);
+            if (!static_ends) op_ends = graph->new_operator_before("pnnx.SliceIndexes", op->name + "_ncnnends", op);
+            if (!static_steps) op_steps = graph->new_operator_before("pnnx.SliceIndexes", op->name + "_ncnnsteps", op);
+            if (!static_selects) op_selects = graph->new_operator_before("pnnx.SliceIndexes", op->name + "_ncnnselects", op);
 
             std::vector<std::string> starts_indexes;
             std::vector<std::string> ends_indexes;
@@ -338,11 +338,11 @@ void fuse_slice_indices(Graph& graph)
                     // drop sop and sop output
                     Operand* sop_out = sop->outputs[0];
 
-                    graph.operands.erase(std::find(graph.operands.begin(), graph.operands.end(), sop_out));
+                    graph->operands.erase(std::find(graph->operands.begin(), graph->operands.end(), sop_out));
 
                     delete sop_out;
 
-                    graph.ops.erase(std::find(graph.ops.begin(), graph.ops.end(), sop));
+                    graph->ops.erase(std::find(graph->ops.begin(), graph->ops.end(), sop));
 
                     delete sop;
                 }
@@ -527,7 +527,7 @@ void fuse_slice_indices(Graph& graph)
             {
                 op_starts->params["indexes"] = starts_indexes;
 
-                Operand* starts_out = graph.new_operand(op->name + "_ncnnstarts_out");
+                Operand* starts_out = graph->new_operand(op->name + "_ncnnstarts_out");
                 starts_out->producer = op_starts;
                 op_starts->outputs.push_back(starts_out);
                 starts_out->consumers.push_back(op);
@@ -543,7 +543,7 @@ void fuse_slice_indices(Graph& graph)
             {
                 op_ends->params["indexes"] = ends_indexes;
 
-                Operand* ends_out = graph.new_operand(op->name + "_ncnnends_out");
+                Operand* ends_out = graph->new_operand(op->name + "_ncnnends_out");
                 ends_out->producer = op_ends;
                 op_ends->outputs.push_back(ends_out);
                 ends_out->consumers.push_back(op);
@@ -559,7 +559,7 @@ void fuse_slice_indices(Graph& graph)
             {
                 op_steps->params["indexes"] = steps_indexes;
 
-                Operand* steps_out = graph.new_operand(op->name + "_ncnnsteps_out");
+                Operand* steps_out = graph->new_operand(op->name + "_ncnnsteps_out");
                 steps_out->producer = op_steps;
                 op_steps->outputs.push_back(steps_out);
                 steps_out->consumers.push_back(op);
@@ -575,7 +575,7 @@ void fuse_slice_indices(Graph& graph)
             {
                 op_selects->params["indexes"] = selects_indexes;
 
-                Operand* selects_out = graph.new_operand(op->name + "_ncnnselects_out");
+                Operand* selects_out = graph->new_operand(op->name + "_ncnnselects_out");
                 selects_out->producer = op_selects;
                 op_selects->outputs.push_back(selects_out);
                 selects_out->consumers.push_back(op);

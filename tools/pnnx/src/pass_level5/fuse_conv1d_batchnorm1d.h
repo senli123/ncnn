@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_conv1d_batchnorm1d(Graph& graph);
+void fuse_conv1d_batchnorm1d(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

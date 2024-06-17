@@ -72,7 +72,7 @@ pnnx.Output             output      1 0 out
     }
 };
 
-void fuse_pixel_unshuffle(Graph& graph)
+void fuse_pixel_unshuffle(std::shared_ptr<pnnx::Graph> graph)
 {
     fuse_pixel_unshuffle_pass a;
     int opindex = 0;

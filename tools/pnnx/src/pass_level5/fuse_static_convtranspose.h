@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_static_convtranspose(Graph& graph);
+void fuse_static_convtranspose(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

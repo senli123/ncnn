@@ -19,15 +19,15 @@
 
 namespace pnnx {
 
-void eliminate_noop_expression(Graph& graph)
+void eliminate_noop_expression(std::shared_ptr<pnnx::Graph> graph)
 {
     while (1)
     {
         bool matched = false;
 
-        for (size_t i = 0; i < graph.ops.size(); i++)
+        for (size_t i = 0; i < graph->ops.size(); i++)
         {
-            Operator* op = graph.ops[i];
+            Operator* op = graph->ops[i];
 
             if (op->type != "pnnx.Expression")
                 continue;
@@ -65,13 +65,13 @@ void eliminate_noop_expression(Graph& graph)
             expr_out->producer = 0;
             expr_out->consumers.clear();
 
-            graph.operands.erase(std::find(graph.operands.begin(), graph.operands.end(), expr_out));
+            graph->operands.erase(std::find(graph->operands.begin(), graph->operands.end(), expr_out));
             delete expr_out;
 
             op->inputs.clear();
             op->outputs.clear();
 
-            graph.ops.erase(graph.ops.begin() + i);
+            graph->ops.erase(graph->ops.begin() + i);
             delete op;
 
             break;

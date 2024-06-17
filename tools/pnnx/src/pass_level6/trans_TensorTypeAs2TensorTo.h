@@ -17,6 +17,6 @@
 
 namespace pnnx {
 
-void trans_TensorTypeAs2TensorTo(Graph& graph);
+void trans_TensorTypeAs2TensorTo(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx

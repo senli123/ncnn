@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fuse_multiheadattention_unpack(Graph& graph);
+void fuse_multiheadattention_unpack(std::shared_ptr<pnnx::Graph> graph);
 
 } // namespace pnnx
