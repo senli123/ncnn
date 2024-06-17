@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <unordered_map> 
 
 #include "ir.h"
 #include "pass_level2.h"
@@ -331,17 +332,18 @@ int main(int argc, char** argv)
     std::set<std::string> foldable_constants;
     std::string foldable_constants_zippath = ptbase + ".foldable_constants.zip";
 
-    pnnx::Graph pnnx_graph;
-    load_torchscript(ptpath, pnnx_graph,
+    std::unordered_map<std::string, std::shared_ptr<pnnx::Graph>> pnnx_graph_map;
+    load_torchscript(ptpath, pnnx_graph_map,
                      device, input_shapes, input_types,
                      input_shapes2, input_types2,
                      customop_modules, module_operators,
                      foldable_constants_zippath, foldable_constants);
 
+
     // load_onnx(ptpath.c_str(), pnnx_graph);
 
     //     g->dump();
-
+#ifdef NDEBUG 
     fprintf(stderr, "############# pass_level2\n");
 
     pnnx::pass_level2(pnnx_graph);
@@ -398,6 +400,7 @@ int main(int argc, char** argv)
     fprintf(stderr, "pnnx build without onnx-zero support, skip saving onnx\n");
 #endif
 
+#endif  
     //     if (optlevel >= 2)
     // {
     //     fprintf(stderr, "############# pass_ncnn\n");

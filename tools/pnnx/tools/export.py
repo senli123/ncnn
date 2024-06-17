@@ -9,6 +9,7 @@ import numpy as np
 import platform 
 try:
     import torch
+    import torchvision
     import torchvision.models as models
     import torch.nn as nn
     import torch.nn.functional as F
@@ -36,6 +37,7 @@ else:
 
 
 def input_torch_type_to_str(tensor):
+    # 0=null 1=f32 2=f64 3=f16 4=i32 5=i64 6=i16 7=i8 8=u8 9=bool 10=c64 11=c128 12=c32
     if tensor.dtype == torch.float32 or tensor.dtype == torch.float:
         return "f32"
     if tensor.dtype == torch.float64 or tensor.dtype == torch.double:
@@ -115,7 +117,22 @@ class unfold_Model(nn.Module):
     def forward(self, x):
         output = self.unfold(x)
         return output
- 
+    
+class NMS(nn.Module):
+    def __init__(self):
+          super().__init__()
+    def forward(self, boxes, scores):
+        x2 = torchvision.ops.nms(boxes, scores, iou_threshold = 0.2) 
+        return x2
+
+class Script1(torch.nn.Module):
+    def __init__(self,):
+        super(Script1, self).__init__()
+    
+    def forward(self, x, y):   
+        for i in range(int(y)):
+            x = x + y
+        return x
 
 def export(model_name: str, net: Union[nn.Module, str], input_shape, export_onnx: bool):
     if isinstance(input_shape, list):
@@ -171,10 +188,12 @@ if __name__ == "__main__":
     "stack":stackModel,
     "oneHot":oneHotModel,
     "reshape_as": reshape_as_Model,
-    "unfold":unfold_Model
+    "unfold":unfold_Model,
+    "NMS":NMS,
+    "Script1":Script1
 } 
     
-    model_name = 'unfold'
+    model_name = 'Script1'
     if model_name in net_map:  
         net = net_map[model_name]()  
     else:  
@@ -209,8 +228,13 @@ if __name__ == "__main__":
     # ----------------------------
 
     # unfold
-    input_shape = [[1,3,9,9]]
-
+    # input_shape = [[1,3,9,9]]
+    # input_shape = [[4,4],[4]]
+    
+    # Script1
+    i1 = torch.ones([5,5])
+    i2 = torch.ones(1, dtype=torch.long)
+    input_shape = [i1,i2]
     export(model_name, net, input_shape, export_onnx)
     # import pnnx
     # pnnx.export

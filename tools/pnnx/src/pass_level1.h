@@ -14,6 +14,8 @@
 
 #ifndef PNNX_PASS_LEVEL1_H
 #define PNNX_PASS_LEVEL1_H
+#include <cassert>  
+#include <unordered_map>
 
 #include <torch/script.h>
 #include <torch/csrc/jit/api/module.h>
@@ -48,7 +50,9 @@ const std::vector<const FuseModulePass*>& get_global_pnnx_fuse_module_passes();
 #define REGISTER_GLOBAL_PNNX_FUSE_MODULE_PASS(CLASS) \
     static FuseModulePassRegister g_global_pnnx_fusemodulepass_##CLASS##_register(new CLASS);
 
-void pass_level1(const torch::jit::Module& mod, const std::shared_ptr<torch::jit::Graph>& g, const std::vector<std::string>& module_operators, Graph& pg);
+void pass_level1(const torch::jit::Module& mod, const std::shared_ptr<torch::jit::Graph>& g,\
+ const std::vector<std::string>& module_operators, \
+ std::unordered_map<std::string, std::shared_ptr<pnnx::Graph>>& pnnx_graph_map);
 
 } // namespace pnnx
 
