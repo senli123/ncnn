@@ -15,21 +15,24 @@ public:
      * @brief Get the Nvp Pnnx Model object
      *
      * @param pt_path torchscript path
+     * @param save_dir the dir of save pnnx 
      * @param input_shape input shape of tensor
      * @param custom_op_path the path of define custom op
      * @param custom_op_py the py path of define custom op
      * @param start_nodes the list of start nodes
      * @param end_nodes the list of end nodes
+     * @param extract_model_name the name of which to extract
      * @return true
      * @return false
      */
     bool getNvpPnnxModel(const std::string& pt_path, \
-     const std::string& save_dir, \
+    const std::string& save_dir, \
     const std::string& input_shape, \
     const std::string& custom_op_path, \
-    const std::string& custom_op_py,
-    const std::string& start_nodes = "",
-    const std::string& end_nodes = "");
+    const std::string& custom_op_py,\
+    const std::string& start_nodes = "",\
+    const std::string& end_nodes = "",\
+    const std::string& extract_model_name = "model");
 
    
     

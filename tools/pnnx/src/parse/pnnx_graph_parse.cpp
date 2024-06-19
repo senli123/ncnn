@@ -65,9 +65,9 @@ bool PnnxGraph::getNvpPnnxModel(const std::string& pt_path, const std::string& s
     std::strcpy( argv[argc - 2], end_nodes_info.c_str());
 
     //insert extract_model_name
-    std::string custom_op_py_info = "extract_model_name=" + custom_op_py;
-    argv[argc - 1] = new char[custom_op_py_info.size() + 1];
-    std::strcpy(argv[argc - 2], custom_op_py_info.c_str());
+    std::string extract_model_name_info = "extract_model_name=" + extract_model_name;
+    argv[argc - 1] = new char[extract_model_name_info.size() + 1];
+    std::strcpy(argv[argc - 1], extract_model_name_info.c_str());
 
     int result = main(argc, argv);
    
