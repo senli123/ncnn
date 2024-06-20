@@ -19,7 +19,8 @@
 #else
 #include <dlfcn.h>
 #endif
-
+#include <iostream>  
+#include <cstdio>  
 #include <torch/script.h>
 #include <torch/csrc/api/include/torch/version.h>
 #ifdef PNNX_TORCHVISION
@@ -32,6 +33,16 @@ int64_t cuda_version();
 #include "pass_level1.h"
 
 namespace pnnx {
+
+static bool fileExists(const std::string& path) {  
+    FILE* file = fopen(path.c_str(), "r");  
+    if (file) {  
+        fclose(file);  
+        return true;  
+    } else {  
+        return false;  
+    }  
+} 
 
 static int get_at_tensor_type(const at::ScalarType& st)
 {
@@ -429,7 +440,8 @@ const torch::jit::Node* find_node_by_kind(const std::shared_ptr<torch::jit::Grap
     return 0;
 }
 
-int load_torchscript(const std::string& ptpath, \
+int load_torchscript(const std::string& ptpath,
+                    const std::string& save_dir,
                     std::unordered_map<std::string, std::shared_ptr<pnnx::Graph>>& pnnx_graph_map,
                      const std::string& device,
                      const std::vector<std::vector<int64_t> >& input_shapes,
@@ -463,32 +475,94 @@ int load_torchscript(const std::string& ptpath, \
         }
 #endif
     }
-
     std::vector<at::Tensor> input_tensors;
-    for (size_t i = 0; i < input_shapes.size(); i++)
-    {
-        const std::vector<int64_t>& shape = input_shapes[i];
-        const std::string& type = input_types[i];
-
-        at::Tensor t = torch::ones(shape, input_type_to_c10_ScalarType(type));
-        if (device == "gpu")
-            t = t.cuda();
-
-        input_tensors.push_back(t);
-    }
-
     std::vector<at::Tensor> input_tensors2;
-    for (size_t i = 0; i < input_shapes2.size(); i++)
+    // load input data
+    std::string input_data_path = save_dir + "/input_tensor_container.pt";
+    bool load_input_data_flag = false;
+    if(fileExists(input_data_path))
     {
-        const std::vector<int64_t>& shape = input_shapes2[i];
-        const std::string& type = input_types2[i];
-
-        at::Tensor t = torch::ones(shape, input_type_to_c10_ScalarType(type));
-        if (device == "gpu")
-            t = t.cuda();
-
-        input_tensors2.push_back(t);
+        try
+        {
+            torch::jit::script::Module tensors = torch::jit::load(input_data_path);
+            bool has_input_tensors = tensors.hasattr("input_tensors");
+            if(!has_input_tensors)
+            {
+                fprintf(stderr, "############# %s exist, but there are not input_tensors, still creating tensor based on shape\n",input_data_path.c_str()); 
+            }
+            else
+            {
+                c10::IValue input_values = tensors.attr("input_tensors");
+                bool is_tensor_vector = input_values.isTensorList();
+                if(!is_tensor_vector)
+                {
+                    fprintf(stderr, "############# input_tensors is not a tensor list, still creating tensor based on shape\n");
+                }
+                else
+                {
+                    bool has_input_tensors2 = tensors.hasattr("input_tensors2");
+                    if(has_input_tensors2)
+                    {
+                        c10::IValue input_values2 = tensors.attr("input_tensors2");
+                        bool is_tensor2_vector = input_values2.isTensorList();
+                        if(!is_tensor2_vector)
+                        {
+                            fprintf(stderr, "############# input_tensors2 is not a tensor list, still creating tensor based on shape\n");
+                        }
+                        else
+                        {
+                            input_tensors2 = input_values2.toTensorVector();
+                            input_tensors = input_values.toTensorVector();
+                            load_input_data_flag = true;
+                        }
+                        
+                    }
+                    else
+                    {
+                        input_tensors = input_values.toTensorVector();
+                        load_input_data_flag = true;
+                    }
+                    
+                }
+            }
+            
+           
+                
+        }
+        catch (const c10::Error& e) 
+        {
+            fprintf(stderr, "############# Failed to load input_tensor_container, still creating tensor based on shape\n");
+        }
     }
+    
+    if(!load_input_data_flag)
+    {
+        for (size_t i = 0; i < input_shapes.size(); i++)
+        {
+            const std::vector<int64_t>& shape = input_shapes[i];
+            const std::string& type = input_types[i];
+
+            at::Tensor t = torch::ones(shape, input_type_to_c10_ScalarType(type));
+            if (device == "gpu")
+                t = t.cuda();
+
+            input_tensors.push_back(t);
+        }
+
+        
+        for (size_t i = 0; i < input_shapes2.size(); i++)
+        {
+            const std::vector<int64_t>& shape = input_shapes2[i];
+            const std::string& type = input_types2[i];
+
+            at::Tensor t = torch::ones(shape, input_type_to_c10_ScalarType(type));
+            if (device == "gpu")
+                t = t.cuda();
+
+            input_tensors2.push_back(t);
+        }
+    }
+    
 
     torch::jit::Module mod;
 

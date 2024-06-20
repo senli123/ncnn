@@ -70,3 +70,6 @@ dev.1.0.20.20240617
 
 dev.1.0.21.20240619
 1. Support export sub_model 
+
+dev.1.0.22.20240620
+1. Support load input tensor to export 
