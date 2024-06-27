@@ -4950,10 +4950,10 @@ Operator* MainGraph::set_sub_graph_new_input(const std::string& sub_graph_name, 
 
 void MainGraph::set_op_new_input(std::string& sub_graph_name2,  Operator* new_input_op)
 {
-    for (auto& it = op_2_graph.begin(); it != op_2_graph.end(); ++it) 
+    for (auto it = op_2_graph.begin(); it != op_2_graph.end(); ++it) 
     {  
         auto& op_2_graph_input_list = it->second;
-        for (auto& it2 = op_2_graph_input_list.begin(); it2 != op_2_graph_input_list.end(); ++it2) 
+        for (auto it2 = op_2_graph_input_list.begin(); it2 != op_2_graph_input_list.end(); ++it2) 
         {
             if(it2->first == sub_graph_name2)
             {

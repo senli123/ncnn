@@ -474,19 +474,21 @@ void PassLevel1::Process_Loop(const torch::jit::Module& mod,
     int init_input_num = op->inputs.size();
     for (const torch::jit::Block* subBlock : n->blocks())
     {
+        std::string loop_block_name = std::string(loop_op_name);
         std::shared_ptr<pnnx::MainGraph> sub_pnnx_graph = std::make_shared<pnnx::MainGraph>();
-        sub_pnnx_graph->create_main_graph(std::string(loop_op_name));
-        pnnx_graph->insert_sub_graph(std::string(loop_op_name), sub_pnnx_graph, op, init_input_num);
+        sub_pnnx_graph->create_main_graph(loop_block_name);
+        pnnx_graph->insert_sub_graph(loop_block_name, sub_pnnx_graph, op, init_input_num);
         sub_pnnx_graph->set_base_graph(pnnx_graph);
         // ASSERT_INFO(block_num == 0 , "block num > 1 in loop"); 
-        std::string loop_block_name = std::string(loop_op_name);
+        
         Process_Loop_block(mod, subBlock, sub_pnnx_graph, op, loop_block_name);
         pnnx_graph->effective_sub_model_name.push_back(loop_block_name);
         block_num++;
+        block_names.push_back(loop_block_name);
+
     }
     
-    block_names.push_back(std::string(loop_op_name));
-
+   
 }
 
 
@@ -764,10 +766,10 @@ void PassLevel1::Process_Input(Operator* op,
                 // set this op with new input
                 auto base_graph = tmp_base_graph->get_base_graph();
                 std::string sub_graph_name = base_graph_names.back();
-                for (auto& it = base_graph->op_2_graph.begin(); it != base_graph->op_2_graph.end(); ++it) 
+                for (auto it = base_graph->op_2_graph.begin(); it != base_graph->op_2_graph.end(); ++it) 
                 {  
                     auto& op_2_graph_input_list = it->second;
-                    for (auto& it2 = op_2_graph_input_list.begin(); it2 != op_2_graph_input_list.end(); ++it2) 
+                    for (auto it2 = op_2_graph_input_list.begin(); it2 != op_2_graph_input_list.end(); ++it2) 
                     {
                         if(it2->first == sub_graph_name)
                         {

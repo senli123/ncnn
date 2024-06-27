@@ -340,7 +340,7 @@ int main(int argc, char** argv)
     }
 
     std::set<std::string> foldable_constants;
-    std::string foldable_constants_zippath = ptbase + ".foldable_constants.zip";
+    std::string foldable_constants_zippath = save_dir + "/model.foldable_constants.zip";
 
     if(input_shapes2.size() > 0)
     {
