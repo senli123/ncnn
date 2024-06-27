@@ -385,7 +385,11 @@ set(pnnx_pass_level6_SRCS
     pass_level6/trans_Stack2Unsqueeze.cpp
     pass_level6/trans_ReshapeAs2Reshape.cpp
     pass_level6/trans_TensorTypeAs2TensorTo.cpp
-    pass_level6/fold_Loop.cpp
+)
+
+set(pnnx_pass_sub_model_SRCS
+    pass_sub_model/fold_Loop.cpp
+    pass_sub_model/fold_If.cpp
 )
 
 # set(pnnx_pass_ncnn_SRCS
@@ -603,7 +607,7 @@ set(torch2pnnx_SRCS
 
     pass_level0.cpp
     pass_level1.cpp
-
+    # pass_level1_class.cpp
     ${pnnx_pass_level0_SRCS}
     ${pnnx_pass_level1_SRCS}
 
@@ -691,13 +695,13 @@ set(pnnx_SRCS
     pass_level4.cpp
     pass_level5.cpp
     pass_level6.cpp
-
+    pass_sub_model.cpp
     ${pnnx_pass_level2_SRCS}
     ${pnnx_pass_level3_SRCS}
     ${pnnx_pass_level4_SRCS}
     ${pnnx_pass_level5_SRCS}
     ${pnnx_pass_level6_SRCS}
-    
+    ${pnnx_pass_sub_model_SRCS}
     # pass_ncnn.cpp
     # save_ncnn.cpp
     # ${pnnx_pass_ncnn_SRCS}

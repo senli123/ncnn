@@ -31,7 +31,7 @@ int64_t cuda_version();
 
 #include "pass_level0.h"
 #include "pass_level1.h"
-
+// #include "pass_level1_class.h"
 namespace pnnx {
 
 static bool fileExists(const std::string& path) {  
@@ -442,7 +442,7 @@ const torch::jit::Node* find_node_by_kind(const std::shared_ptr<torch::jit::Grap
 
 int load_torchscript(const std::string& ptpath,
                     const std::string& save_dir,
-                    std::unordered_map<std::string, std::shared_ptr<pnnx::Graph>>& pnnx_graph_map,
+                    std::shared_ptr<pnnx::MainGraph>& pnnx_graph,
                      const std::string& device,
                      const std::vector<std::vector<int64_t> >& input_shapes,
                      const std::vector<std::string>& input_types,
@@ -609,19 +609,26 @@ int load_torchscript(const std::string& ptpath,
 
     auto g = method->graph();
 
-    // g->dump();
-
+  
     fprintf(stderr, "############# pass_level0\n");
-
+    
+#ifdef DEBUG 
+    fprintf(stderr, "before graph\n");
+    g->dump();
+#endif 
+    
     pnnx::pass_level0(mod, g, input_tensors, input_tensors2, module_operators, ptpath, device, foldable_constants, foldable_constants_zippath);
 
-    // g->dump();
+#ifdef DEBUG 
+    fprintf(stderr, "after graph\n");
+    g->dump();
+#endif 
 
     fprintf(stderr, "############# pass_level1\n");
 
-    pnnx::pass_level1(mod, g, module_operators, pnnx_graph_map);
-
+    pnnx::PassLevel1 pass_level1_class;    
+    pass_level1_class.Process(mod, g, module_operators, pnnx_graph);
     return 0;
-}
+} 
 
 } // namespace pnnx

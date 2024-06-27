@@ -14,7 +14,7 @@
 
 #ifndef PNNX_IR_H
 #define PNNX_IR_H
-
+#include <memory>
 #include <limits.h>
 #include <complex>
 #include <initializer_list>
@@ -23,7 +23,8 @@
 #include <set>
 #include <string>
 #include <vector>
-
+#include <unordered_map>
+#include <queue>
 #if BUILD_TORCH2PNNX
 namespace torch {
 namespace jit {
@@ -331,6 +332,8 @@ public:
 
     Operator* new_operator(const std::string& type, const std::string& name);
 
+    Operator* new_constant_operator(const std::string& type, const std::string& name);
+
     Operator* new_operator_before(const std::string& type, const std::string& name, const Operator* cur);
 
     Operator* new_operator_after(const std::string& type, const std::string& name, const Operator* cur);
@@ -360,6 +363,37 @@ private:
     Graph(const Graph& rhs);
     Graph& operator=(const Graph& rhs);
 };
+
+class MainGraph
+{
+public:
+    MainGraph();
+    ~MainGraph();
+    std::string get_pnnx_graph_name();
+    void create_main_graph(std::string& name);
+    std::shared_ptr<pnnx::Graph> get_main_graph();
+    void insert_sub_graph(std::string& name, std::shared_ptr<pnnx::MainGraph>& sub_graph, Operator* op, int init_input_num = 0);
+    void set_base_graph(std::shared_ptr<pnnx::MainGraph>& base_graph);
+    std::shared_ptr<pnnx::MainGraph> get_base_graph();
+    std::shared_ptr<pnnx::MainGraph> get_sub_graph(std::string& name);
+    Operator* set_sub_graph_new_input(const std::string& sub_graph_name, const std::string& operand_name, Operand* r1);
+    void set_op_new_input(std::string& sub_graph_name2,  Operator* new_input_op);
+    Operator* get_base_op(std::string& sub_op_block_name);
+    std::unordered_map<std::string, std::unordered_map<std::string, std::vector<int>>> op_2_graph;
+    std::unordered_map<std::string, std::shared_ptr<pnnx::MainGraph>> sub_graph_map;
+    std::string name;
+    std::vector<std::string> effective_sub_model_name;
+private:
+    
+    std::shared_ptr<pnnx::Graph> main_graph;
+    
+
+    std::shared_ptr<pnnx::MainGraph> base_graph;
+
+    MainGraph(const MainGraph& rhs);
+    MainGraph& operator=(const MainGraph& rhs);
+};
+
 
 } // namespace pnnx
 

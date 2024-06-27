@@ -49,10 +49,63 @@ const std::vector<const FuseModulePass*>& get_global_pnnx_fuse_module_passes();
 #define REGISTER_GLOBAL_PNNX_FUSE_MODULE_PASS(CLASS) \
     static FuseModulePassRegister g_global_pnnx_fusemodulepass_##CLASS##_register(new CLASS);
 
-void pass_level1(const torch::jit::Module& mod, const std::shared_ptr<torch::jit::Graph>& g,\
- const std::vector<std::string>& module_operators, \
- std::unordered_map<std::string, std::shared_ptr<pnnx::Graph>>& pnnx_graph_map);
+class PassLevel1
+{
+public:
+    void Process(const torch::jit::Module& mod,
+                const std::shared_ptr<torch::jit::Graph>& g, 
+                const std::vector<std::string>& module_operators,
+                std::shared_ptr<pnnx::MainGraph>& pnnx_graph);
+private:
 
+   
+    void Process_GetAttr(const torch::jit::Module& mod, const torch::jit::Node* n, std::shared_ptr<pnnx::Graph>& pg);
+   
+    void Process_Constant(
+            const torch::jit::Node* n, 
+            std::shared_ptr<pnnx::MainGraph>& pnnx_graph);
+
+    void Process_CallMethod(const torch::jit::Module& mod, 
+            const torch::jit::Node* n, 
+            std::shared_ptr<pnnx::MainGraph>& pnnx_graph);
+
+    void Process_Loop(const torch::jit::Module& mod, 
+            const torch::jit::Node* n, 
+            std::shared_ptr<pnnx::MainGraph>& pnnx_graph);
+
+    void Process_If(const torch::jit::Module& mod, 
+            const torch::jit::Node* n, 
+            std::shared_ptr<pnnx::MainGraph>& pnnx_graph);
+
+    void Process_Other(const torch::jit::Node* n, 
+     std::shared_ptr<pnnx::MainGraph>& pnnx_graph);
+    
+    void Process_Loop_block(const torch::jit::Module& mod, 
+    const torch::jit::Block* sub_block, 
+    std::shared_ptr<pnnx::MainGraph>& pnnx_graph,
+    Operator* loop_op,
+    std::string& sub_op_block_name);
+
+    void Process_If_block(const torch::jit::Module& mod, 
+    const torch::jit::Block* sub_block, 
+    std::shared_ptr<pnnx::MainGraph>& pnnx_graph,
+    std::string& sub_op_block_name);
+
+    void Process_Input(Operator* op, 
+    std::shared_ptr<pnnx::MainGraph>& pnnx_graph, 
+    const torch::jit::Node* n,
+    int start_index=0);
+
+    void Process_Output(Operator* op, const torch::jit::Node* n, std::shared_ptr<pnnx::Graph>& pg);
+
+private:
+    std::map<std::string, std::string> class_type_to_names;
+    int pnnx_unknown_index = 0;
+    int pnnx_loop_index = 0;
+    int pnnx_if_index = 0;
+    std::vector<std::string> _module_operators;
+
+};
 } // namespace pnnx
 
 #endif // PNNX_PASS_LEVEL1_H

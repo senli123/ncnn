@@ -16,6 +16,6 @@
 
 namespace pnnx {
 
-void fold_Loop(std::shared_ptr<pnnx::Graph> graph);
+void fold_Loop(std::shared_ptr<pnnx::MainGraph> graph);
 
 } // namespace pnnx

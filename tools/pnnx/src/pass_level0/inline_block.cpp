@@ -55,7 +55,10 @@ static void inlineCalls(torch::jit::Block* block, const std::vector<std::string>
             auto fun_type = function_constant->output()->type()->expect<torch::jit::FunctionType>();
             if (!fun_type->function()->isGraphFunction())
                 continue;
-
+#ifdef DEBUG 
+            fprintf(stderr, "CallFunction graph\n");
+            toGraphFunction(*(fun_type->function())).graph()->dump();
+#endif 
 #if TORCH_VERSION_MAJOR >= 2 || (TORCH_VERSION_MAJOR >= 1 && TORCH_VERSION_MINOR >= 11)
             inlineCalls(toGraphFunction(*(fun_type->function())).graph()->block(), module_operators, inlined_modules, inside_module_op);
 #else

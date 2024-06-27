@@ -19,7 +19,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map> 
-
+#include <queue> 
 #include "config.h"
 #include "ir.h"
 #include "pass_level2.h"
@@ -27,6 +27,7 @@
 #include "pass_level4.h"
 #include "pass_level5.h"
 #include "pass_level6.h"
+#include "pass_sub_model.h"
 #if BUILD_TORCH2PNNX
 #include "load_torchscript.h"
 #endif
@@ -345,8 +346,8 @@ int main(int argc, char** argv)
     {
         dynamic_network = true;
     }
-    std::unordered_map<std::string, std::shared_ptr<pnnx::Graph>> pnnx_graph_map;
-    load_torchscript(ptpath, save_dir, pnnx_graph_map,
+    std::shared_ptr<pnnx::MainGraph> pnnx_graph = std::make_shared<pnnx::MainGraph>();
+    load_torchscript(ptpath, save_dir, pnnx_graph,
                      device, input_shapes, input_types,
                      input_shapes2, input_types2,
                      customop_modules, module_operators,
@@ -356,12 +357,85 @@ int main(int argc, char** argv)
 
     //     g->dump();
     // #ifdef NDEBUG 
+    std::set<std::string> custom_ops;
     // loop all graph tp pass
-    for (const auto& graph_pair : pnnx_graph_map) { 
-        
-        std::string graph_name = graph_pair.first;
+    std::queue<std::shared_ptr<pnnx::MainGraph>> main_graph_queue;  
+    main_graph_queue.push(pnnx_graph);
+    while( !main_graph_queue.empty())
+    {
+        std::shared_ptr<pnnx::MainGraph> cur_main_graph = main_graph_queue.front();
+        main_graph_queue.pop();
+        std::shared_ptr<pnnx::Graph> graph = cur_main_graph->get_main_graph(); 
+        for(auto pair: cur_main_graph->sub_graph_map)
+        {
+            main_graph_queue.push(pair.second);
+        }        
+        std::string graph_name = cur_main_graph->name;
         if(graph_name == "src")
             graph_name = "model";
+        
+        fprintf(stderr, "############# pass_level2 at %s\n", graph_name.c_str());
+        pnnx::pass_level2(graph);
+        
+        // pnnx_graph.save("debug.param", "debug.bin");
+        // add by senli
+        
+
+        if (optlevel >= 1)
+        {
+            fprintf(stderr, "############# pass_level3 at %s\n",  graph_name.c_str());
+
+            pnnx::pass_level3(graph, foldable_constants, foldable_constants_zippath);
+
+            fprintf(stderr, "############# pass_level4 at %s\n",  graph_name.c_str());
+
+            // add by senli
+            pnnx::pass_level4(graph, custom_ops);
+        }
+
+        // pnnx_graph.save("debug2.param", "debug2.bin");
+
+        if (optlevel >= 2)
+        {
+            fprintf(stderr, "############# pass_level5 at %s\n",  graph_name.c_str());
+
+            pnnx::pass_level5(graph, foldable_constants, foldable_constants_zippath);
+
+            // add by senli 20240321
+            fprintf(stderr, "############# pass_level6 at %s\n",  graph_name.c_str());
+
+            pnnx::pass_level6(graph, foldable_constants, foldable_constants_zippath);
+        }
+
+    }  
+
+    // sub_graph_pass
+    fprintf(stderr, "############# pass_sub_model\n");
+    pnnx::pass_sub_model(pnnx_graph);
+
+    // save graph 
+    std::queue<std::shared_ptr<pnnx::MainGraph>> main_graph_queue2;  
+    main_graph_queue2.push(pnnx_graph);
+
+     while( !main_graph_queue2.empty())
+    {
+        std::shared_ptr<pnnx::MainGraph> cur_main_graph2 = main_graph_queue2.front();
+        main_graph_queue2.pop();
+        std::shared_ptr<pnnx::Graph> graph2 = cur_main_graph2->get_main_graph(); 
+
+        for(auto pair2: cur_main_graph2->sub_graph_map)
+        {
+            auto it = std::find(cur_main_graph2->effective_sub_model_name.begin(), cur_main_graph2->effective_sub_model_name.end(),pair2.first);
+            if(it != cur_main_graph2->effective_sub_model_name.end())
+            {
+                main_graph_queue2.push(pair2.second);
+            }
+            
+        }        
+        std::string graph_name = cur_main_graph2->name;
+        if(graph_name == "src")
+            graph_name = "model";
+
         std::string pnnxparampath = save_dir + "/" + graph_name + ".pnnx.param";
         std::string pnnxbinpath = save_dir + "/" + graph_name + ".pnnx.bin";
         std::string pnnxpypath = save_dir + "/" + graph_name + "_pnnx.py";
@@ -371,59 +445,24 @@ int main(int argc, char** argv)
         fprintf(stderr, "pnnxbin = %s\n", pnnxbinpath.c_str());
         fprintf(stderr, "pnnxpy = %s\n", pnnxpypath.c_str());
         fprintf(stderr, "pnnxinferpy = %s\n", pnnxinferpath.c_str());
-        
-        fprintf(stderr, "############# pass_level2 at %s\n", graph_name.c_str());
-        pnnx::pass_level2(graph_pair.second);
-        
-        // pnnx_graph.save("debug.param", "debug.bin");
-        // add by senli
-        std::set<std::string> custom_ops;
-
-        if (optlevel >= 1)
-        {
-            fprintf(stderr, "############# pass_level3 at %s\n",  graph_name.c_str());
-
-            pnnx::pass_level3(graph_pair.second, foldable_constants, foldable_constants_zippath);
-
-            fprintf(stderr, "############# pass_level4 at %s\n",  graph_name.c_str());
-
-            // add by senli
-            pnnx::pass_level4(graph_pair.second, custom_ops);
-        }
-
-        // pnnx_graph.save("debug2.param", "debug2.bin");
-
-        if (optlevel >= 2)
-        {
-            fprintf(stderr, "############# pass_level5 at %s\n",  graph_name.c_str());
-
-            pnnx::pass_level5(graph_pair.second, foldable_constants, foldable_constants_zippath);
-
-            // add by senli 20240321
-            fprintf(stderr, "############# pass_level6 at %s\n",  graph_name.c_str());
-
-            pnnx::pass_level6(graph_pair.second, foldable_constants, foldable_constants_zippath);
-        }
-
-        
 
         // extract_sub_graph
         if(extract_model_name == graph_name)
         {
             fprintf(stderr, "############# start to extract_sub_graph in %s\n", graph_name.c_str());
-            int extract_flag = graph_pair.second->extract_sub_graph(start_nodes, end_nodes);
+            int extract_flag = graph2->extract_sub_graph(start_nodes, end_nodes);
             if(extract_flag == -1)
             {
                 fprintf(stderr, "############# failed to extract_sub_graph\n");
             }
         }
         
-        graph_pair.second->save(pnnxparampath, pnnxbinpath);
+        graph2->save(pnnxparampath, pnnxbinpath);
 
-        graph_pair.second->python(pnnxpypath, pnnxbinpath);
+        graph2->python(pnnxpypath, pnnxbinpath);
         //add by senli[pnnx_infer]
 
-        graph_pair.second->python_infer(pnnxinferpath, pnnxbinpath, customop_modules, custom_ops, customop_infer_py, save_dir);
+        graph2->python_infer(pnnxinferpath, pnnxbinpath, customop_modules, custom_ops, customop_infer_py, save_dir);
 
         #if BUILD_PNNX2ONNX
             pnnx::save_onnx(pnnx_graph, pnnxonnxpath.c_str(), fp16);
@@ -446,6 +485,7 @@ int main(int argc, char** argv)
         //     pnnx_graph2.save("pnnx2.param", "pnnx2.bin");
 
     }  
+
     // delete foldable_constants_zippath
     remove(foldable_constants_zippath.c_str());
     
