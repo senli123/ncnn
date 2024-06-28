@@ -34,6 +34,26 @@ int64_t cuda_version();
 // #include "pass_level1_class.h"
 namespace pnnx {
 
+static std::string get_modelname(const std::string& path)
+{
+    std::string dirpath;
+    std::string filename;
+
+    size_t dirpos = path.find_last_of("/\\");
+    if (dirpos != std::string::npos)
+    {
+        dirpath = path.substr(0, dirpos + 1);
+        filename = path.substr(dirpos + 1);
+    }
+    else
+    {
+        filename = path;
+    }
+
+    std::string base = filename.substr(0, filename.find_last_of('.'));
+    return base;
+}
+
 static bool fileExists(const std::string& path) {  
     FILE* file = fopen(path.c_str(), "r");  
     if (file) {  
@@ -625,9 +645,9 @@ int load_torchscript(const std::string& ptpath,
 #endif 
 
     fprintf(stderr, "############# pass_level1\n");
-
+    std::string model_name = get_modelname(ptpath);
     pnnx::PassLevel1 pass_level1_class;    
-    pass_level1_class.Process(mod, g, module_operators, pnnx_graph);
+    pass_level1_class.Process(mod, g, module_operators, pnnx_graph, model_name);
     return 0;
 } 
 

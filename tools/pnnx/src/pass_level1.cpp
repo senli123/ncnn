@@ -114,11 +114,11 @@ static void fuse_moduleop_unpack(std::shared_ptr<Graph>& graph, const std::vecto
 void PassLevel1::Process(const torch::jit::Module& mod,
                 const std::shared_ptr<torch::jit::Graph>& g, 
                 const std::vector<std::string>& module_operators,
-                std::shared_ptr<pnnx::MainGraph>& pnnx_graph)
+                std::shared_ptr<pnnx::MainGraph>& pnnx_graph,
+                std::string& model_name)
 {
     // create main graph
-    std::string main_graph_name = "src";
-    pnnx_graph->create_main_graph(main_graph_name);
+    pnnx_graph->create_main_graph(model_name);
     std::shared_ptr<pnnx::Graph> pg = pnnx_graph->get_main_graph();
     this->_module_operators = module_operators;
 
@@ -485,10 +485,10 @@ void PassLevel1::Process_Loop(const torch::jit::Module& mod,
         pnnx_graph->effective_sub_model_name.push_back(loop_block_name);
         block_num++;
         block_names.push_back(loop_block_name);
-
     }
     
    
+
 }
 
 

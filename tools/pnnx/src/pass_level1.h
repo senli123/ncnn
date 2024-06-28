@@ -55,7 +55,8 @@ public:
     void Process(const torch::jit::Module& mod,
                 const std::shared_ptr<torch::jit::Graph>& g, 
                 const std::vector<std::string>& module_operators,
-                std::shared_ptr<pnnx::MainGraph>& pnnx_graph);
+                std::shared_ptr<pnnx::MainGraph>& pnnx_graph,
+                std::string& model_name);
 private:
 
    

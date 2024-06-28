@@ -211,7 +211,7 @@ int main(int argc, char** argv)
     std::string ptpath = std::string(argv[1]);
     std::string save_dir = std::string(argv[2]);
     std::string ptbase = get_basename(ptpath);
-
+    
     // std::string pnnxparampath = ptbase + ".pnnx.param";
     // std::string pnnxbinpath = ptbase + ".pnnx.bin";
     // std::string pnnxpypath = ptbase + "_pnnx.py";
@@ -371,8 +371,8 @@ int main(int argc, char** argv)
             main_graph_queue.push(pair.second);
         }        
         std::string graph_name = cur_main_graph->name;
-        if(graph_name == "src")
-            graph_name = "model";
+        // if(graph_name == "src")
+        //     graph_name = "model";
         
         fprintf(stderr, "############# pass_level2 at %s\n", graph_name.c_str());
         pnnx::pass_level2(graph);
@@ -433,8 +433,8 @@ int main(int argc, char** argv)
             
         }        
         std::string graph_name = cur_main_graph2->name;
-        if(graph_name == "src")
-            graph_name = "model";
+        // if(graph_name == "src")
+        //     graph_name = "model";
 
         std::string pnnxparampath = save_dir + "/" + graph_name + ".pnnx.param";
         std::string pnnxbinpath = save_dir + "/" + graph_name + ".pnnx.bin";
