@@ -10,6 +10,7 @@ def ParseParams(op, customOp_attrs = None):
     #parse parms
     #0=null 1=b 2=i 3=f 4=s 5=ai 6=af 7=as 8=others
     for name, param in params.items():
+        name = name.replace('.','_')
         param_type = param.type
         if param_type == 0:
             params_data[name] = None
@@ -47,6 +48,7 @@ def ParseAttrs(op):
     #parse attrs
     attrs = op.attrs
     for name,attr in attrs.items():
+        name = name.replace('.','_')
         sub_dict = {}
         sub_dict['shape'] = attr.shape
         if attr.type == 1:

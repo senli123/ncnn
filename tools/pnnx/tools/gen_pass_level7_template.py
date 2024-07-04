@@ -25,7 +25,7 @@ def gen_pass_level7_template(ops, output_path, pass_name):
     params = cur_op.params
     attribute = cur_op.attrs
     init_params_name = list(params.keys()) + list(attribute.keys())
-    init_params_name.append('input_shapes')
+    # init_params_name.append('input_shapes')
     op_type = cur_op.type
 
     output_py_path = os.path.join(output_path, pass_name + '.py')
@@ -38,7 +38,7 @@ def gen_pass_level7_template(ops, output_path, pass_name):
         f.write("\n")
 
         #op_type
-        f.write("op_type = '{}'\n ".format(op_type))
+        f.write("op_type = ['{}']\n ".format(op_type))
         f.write("\n")
 
         #define model
@@ -107,11 +107,22 @@ if __name__ == "__main__":
     input_shape_str = '[1,3,9,9]'
     pass_name = 'UnfoldPass_new'
 
+    # PixelShuffle
+    pt_path_str = r'D:\project\programs\ncnn_project\sub_model\ncnn\tools\pnnx\model_zoo\PixelShuffle\PixelShuffle.pt' 
+    input_shape_str = '[1,64,8,8]'
+    pass_name = 'PixelShuffle'
+
+
+    # MultiHeadAttention
+    pt_path_str = r'D:\project\programs\ncnn_project\sub_model\ncnn\tools\pnnx\model_zoo\MultiHeadAttention\MultiHeadAttention.pt' 
+    input_shape_str = '[256,1,512]'
+    pass_name = 'MultiHeadAttention'
+
     # custom_op_path_str = 
     # infer_py_path = 
     # gen pnnx model
     if platform.system() == "Windows":  
-        output_path = 'D:/project/programs/ncnn_project/ncnn/tools/pnnx/pass_level7/template'
+        output_path = r'D:\project\programs\ncnn_project\sub_model\ncnn\tools\pnnx\pass_level7\template'
     elif platform.system() == "Linux":  
         output_path = '/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/pass_level7/template'
     else:  

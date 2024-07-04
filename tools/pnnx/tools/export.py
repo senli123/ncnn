@@ -29,7 +29,7 @@ from onnxsim import simplify
  
 
 if platform.system() == "Windows":  
-    save_path = 'D:/project/programs/ncnn_project/ncnn/tools/pnnx/model_zoo'
+    save_path = r'D:\project\programs\ncnn_project\sub_model\ncnn\tools\pnnx\model_zoo'
 elif platform.system() == "Linux":  
     save_path = '/workspace/trans_onnx/project/new_project/ncnn/tools/pnnx/model_zoo'
 else:  
@@ -133,6 +133,23 @@ class Script1(torch.nn.Module):
         for i in range(int(y)):
             x = x + y
         return x
+    
+class PixelShuffle(torch.nn.Module):
+    def __init__(self,):
+        super(PixelShuffle, self).__init__() 
+        self.p =  nn.PixelShuffle(upscale_factor=2)
+    def forward(self, x):   
+        # y = self.p(x)
+        y = F.pixel_shuffle(x,upscale_factor=2)
+        return y
+    
+class MultiHeadAttention(torch.nn.Module):
+    def __init__(self,):
+        super(MultiHeadAttention, self).__init__()
+        self.m = nn.MultiheadAttention(add_bias_kv=False, add_zero_attn=False, batch_first=False, bias=True, embed_dim=512, kdim=512, num_heads=8, vdim=512)
+    def forward(self, v_122):   
+        y,_ =  self.m(v_122, v_122, v_122, need_weights=False)
+        return y
 
 def export(model_name: str, net: Union[nn.Module, str], input_shape, export_onnx: bool):
     if isinstance(input_shape, list):
@@ -190,10 +207,12 @@ if __name__ == "__main__":
     "reshape_as": reshape_as_Model,
     "unfold":unfold_Model,
     "NMS":NMS,
-    "Script1":Script1
+    "Script1":Script1,
+    "PixelShuffle":PixelShuffle,
+    "MultiHeadAttention":MultiHeadAttention
 } 
     
-    model_name = 'Script1'
+    model_name = 'PixelShuffle'
     if model_name in net_map:  
         net = net_map[model_name]()  
     else:  
@@ -232,9 +251,23 @@ if __name__ == "__main__":
     # input_shape = [[4,4],[4]]
     
     # Script1
-    i1 = torch.ones([5,5])
-    i2 = torch.ones(1, dtype=torch.long)
-    input_shape = [i1,i2]
+    # i1 = torch.ones([5,5])
+    # i2 = torch.ones(1, dtype=torch.long)
+    # input_shape = [i1,i2]
+    # export(model_name, net, input_shape, export_onnx)
+
+    #PixelShuffle
+    # input_shape = [torch.randn([1,64,8,8])]
+    # export(model_name, net, input_shape, export_onnx)
+
+    #multiHeadAttention
+    # input_shape = [torch.randn([256,1,512])]
+    # export(model_name, net, input_shape, export_onnx)
+    
+    # model_name = 'fovea'  
+    net = r'D:\project\programs\ncnn_project\sub_model\ncnn\tools\pnnx\model_zoo\fovea\end2end.pt'
+    input_shape = [[1,3,800,1216]]
+    export_onnx = False
     export(model_name, net, input_shape, export_onnx)
     # import pnnx
     # pnnx.export
