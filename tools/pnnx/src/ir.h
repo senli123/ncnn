@@ -358,7 +358,7 @@ public:
 
     std::vector<Operator*> ops;
     std::vector<Operand*> operands;
-
+    int skip_pass_level6 = 0;
 private:
     Graph(const Graph& rhs);
     Graph& operator=(const Graph& rhs);

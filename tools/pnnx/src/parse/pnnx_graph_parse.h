@@ -11,7 +11,7 @@ class PnnxGraph
 {
 public:
 
-/**
+    /**
      * @brief Get the Nvp Pnnx Model object
      *
      * @param pt_path torchscript path
@@ -30,7 +30,9 @@ public:
     const std::string& custom_op_py,\
     const std::string& start_nodes = "",\
     const std::string& end_nodes = "",\
-    const std::string& extract_model_name = "model");
+    const std::string& extract_model_name = "model",
+    const std::string& skip_pass_level6 = "0",
+    const std::string& only_save_main = "0");
 
     /**
      * @brief Get the Nvp Pnnx Model object
@@ -53,8 +55,9 @@ public:
     const std::string& custom_op_py,\
     const std::string& start_nodes = "",\
     const std::string& end_nodes = "",\
-    const std::string& extract_model_name = "model");
-
+    const std::string& extract_model_name = "model",
+    const std::string& skip_pass_level6 = "0",
+    const std::string& only_save_main = "0");
 
    
     

@@ -170,7 +170,7 @@ void fuse_index_expression(std::shared_ptr<pnnx::Graph> graph)
             matched = true;
 
             std::string expr = fuse_attribute_expression(op2);
-
+            op->params["indice_num"] = int(op2->inputs.size());
             op->params["expr"] = expr;
 
             op->inputs[1]->producer = 0;

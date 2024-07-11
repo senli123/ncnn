@@ -36,9 +36,10 @@ void trans_expression2TupleConstruct(std::shared_ptr<pnnx::Graph> graph)
             {
                 Parameter param = op->params["expr"];
                 std::string expr = param.s;
-                // printf("op_name:%s\n",op->name.c_str());
+                
                 if (expr.front() == '[' && expr.back() == ']')
                 {
+                    printf("op_name:%s\n",op->name.c_str());
                     matched = true;
                     std::vector<Operand*> outputs = op->outputs;
                     bool sink_node_is_index = false;
@@ -46,41 +47,108 @@ void trans_expression2TupleConstruct(std::shared_ptr<pnnx::Graph> graph)
                     {
                         sink_node_is_index = true;
                     }
-                   
                     if (sink_node_is_index)
                     {
                         // update expr 
-                        std::string out_operand_name = outputs[0]->name;
+                        int input_num = op->inputs.size();
+                        std::vector<Operand*> cur_op_inputs = op->inputs;
                         size_t pos = 0; 
-                        if((pos = expr.find("0")) != std::string::npos)
+                        for(int i = 0; i < input_num; i++)
                         {
-                            expr.replace(pos, 1, out_operand_name);
+                            std::string index = std::to_string(i); 
+                            std::string operand_name = cur_op_inputs[i]->name;
+                            pos = expr.find('@',pos);
+                            if(pos != std::string::npos)
+                            {
+                                expr.replace(pos+1, 1, operand_name);
+                            }
+                            pos += 1;
                         }
-                        outputs[0]->consumers[0]->params["expr"] = expr;
-                        Operand* input = op->inputs[0];
-                        Operator* pre_node = input->producer;  
-                        pre_node->outputs.clear();
-                        for (auto& single_out : outputs)
+                        for(auto out: outputs)
                         {
-                            single_out->producer = pre_node;
-                            pre_node->outputs.push_back(single_out);
+                            for(auto consumer: out->consumers)
+                            {
+                                consumer->params["expr"] = expr;
+                                consumer->inputs.insert(consumer->inputs.end(), cur_op_inputs.begin(), cur_op_inputs.end());
+                                for(auto input: cur_op_inputs)
+                                {
+                                    input->consumers.push_back(consumer);
+                                }
+
+                            }
                         }
-                        input->producer = 0;
-                        input->consumers.clear();
-                        graph->operands.erase(std::find(graph->operands.begin(), graph->operands.end(), input));
-                        delete input;
+                        // delete cur op and out_operand
+                        for(auto input: cur_op_inputs)
+                        {
+                            input->consumers.erase(std::find(input->consumers.begin(), input->consumers.end(), op));
+                        }
+                        for(auto out: outputs)
+                        {
+                            for(auto consumer: out->consumers)
+                            {
+                                consumer->inputs.erase(std::find(consumer->inputs.begin(), consumer->inputs.end(), out));
+                            }
+                        }
+                        Operand* output = op->outputs[0];
+                        output->producer = 0;
+                        output->consumers.clear();
+                        graph->operands.erase(std::find(graph->operands.begin(), graph->operands.end(), output));
+                        delete output;
 
                         op->inputs.clear();
                         op->outputs.clear();
 
                         graph->ops.erase(graph->ops.begin() + i);
                         delete op;
+
+
+                        
+
+                       
+
+                        
+                        
+                       
                     }
                     else
                     {
                         op->type = "prim::TupleConstruct";
                         op->params.clear();
                     }
+                    // if (sink_node_is_index)
+                    // {
+                    //     // update expr 
+                    //     std::string out_operand_name = outputs[0]->name;
+                    //     size_t pos = 0; 
+                    //     if((pos = expr.find("0")) != std::string::npos)
+                    //     {
+                    //         expr.replace(pos, 1, out_operand_name);
+                    //     }
+                    //     outputs[0]->consumers[0]->params["expr"] = expr;
+                    //     Operand* input = op->inputs[0];
+                    //     Operator* pre_node = input->producer;  
+                    //     pre_node->outputs.clear();
+                    //     for (auto& single_out : outputs)
+                    //     {
+                    //         single_out->producer = pre_node;
+                    //         pre_node->outputs.push_back(single_out);
+                    //     }
+                    //     input->producer = 0;
+                    //     input->consumers.clear();
+                    //     graph->operands.erase(std::find(graph->operands.begin(), graph->operands.end(), input));
+                    //     delete input;
+
+                    //     op->inputs.clear();
+                    //     op->outputs.clear();
+
+                    //     graph->ops.erase(graph->ops.begin() + i);
+                    //     delete op;
+                    // }
+                    // else
+                    // {
+                    //     op->type = "prim::TupleConstruct";
+                    //     op->params.clear();
+                    // }
                    
                     break;
                 }

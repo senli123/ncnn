@@ -1432,10 +1432,24 @@ static std::string make_index_expression(const Operator* op)
         indices_index++;
     }
     size_t pos = 0;  
-    if ((pos = index_expr.find("@")) != std::string::npos) {  
+    while((pos = index_expr.find("@")) != std::string::npos) {   
         index_expr.replace(pos, 1, "v_");  
     }
-    for(int i = 0; i < shape.size(); i++)
+    int input_size = op->inputs.size();
+    int loop_num = 0;
+    if(input_size == 1)
+    {
+        int indice_num = op->params.at("indice_num").i;
+        loop_num = shape.size() - indice_num + 1;
+    }
+    else
+    {
+        loop_num = shape.size() - (input_size - 1) + 1;
+    }
+    
+    // fprintf(stderr, "############# indice_num: %s\n",  std::to_string(indice_num).c_str());
+    // fprintf(stderr, "############# loop_num: %s\n",  std::to_string(loop_num).c_str());
+    for(int i = 0; i < loop_num; i++)
     {
         if ( i == indices_index)
         {
@@ -1446,7 +1460,7 @@ static std::string make_index_expression(const Operator* op)
             out_index_expr =  out_index_expr + ":";
             
         }
-        if ( i != shape.size() - 1)
+        if ( i != loop_num - 1)
         {
              out_index_expr =  out_index_expr + ",";
         }
@@ -1822,20 +1836,30 @@ int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
             }
             else if (op->type == "Tensor.index")
             {
-                // index expr
-                // if (op->inputs.size() == 2)
-                // {
-                //     std::string expanded_expr = expand_expression(op->inputs[1]->producer);
-                //     fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), expanded_expr.c_str());
-                // }
-                // else
-                // {
-                //     std::string index_expr = make_index_expression(op);
-                //     fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), index_expr.c_str());
-                // }
-                std::string index_expr = make_index_expression(op);
-                fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), index_expr.c_str());
-                
+               if(!skip_pass_level6)
+                {
+                   
+                    fprintf(stderr, "############# gen python with Tensor.index at %s\n",  op->name.c_str());
+
+                    std::string index_expr = make_index_expression(op);
+                    fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), index_expr.c_str());
+
+                }
+                else
+                {
+                    fprintf(stderr, "############# gen python with Tensor.index at %s\n",  op->name.c_str());
+                    //    index expr
+                    if (op->inputs.size() == 2)
+                    {
+                        std::string expanded_expr = expand_expression(op->inputs[1]->producer);
+                        fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), expanded_expr.c_str());
+                    }
+                    else
+                    {
+                        std::string index_expr = make_index_expression(op);
+                        fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), index_expr.c_str());
+                    }
+                }
             }
             else if (op->type == "Tensor.expand")
             {
@@ -3400,19 +3424,30 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,
             }
             else if (op->type == "Tensor.index")
             {
-                // index expr
-                // if (op->inputs.size() == 2)
-                // {
-                //     std::string expanded_expr = expand_expression(op->inputs[1]->producer);
-                //     fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), expanded_expr.c_str());
-                // }
-                // else
-                // {
-                //     std::string index_expr = make_index_expression(op);
-                //     fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), index_expr.c_str());
-                // }
-                std::string index_expr = make_index_expression(op);
-                fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), index_expr.c_str());
+                 if(!skip_pass_level6)
+                {
+                   
+                    fprintf(stderr, "############# gen python with Tensor.index at %s\n",  op->name.c_str());
+
+                    std::string index_expr = make_index_expression(op);
+                    fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), index_expr.c_str());
+
+                }
+                else
+                {
+                    fprintf(stderr, "############# gen python with Tensor.index at %s\n",  op->name.c_str());
+                    //    index expr
+                    if (op->inputs.size() == 2)
+                    {
+                        std::string expanded_expr = expand_expression(op->inputs[1]->producer);
+                        fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), expanded_expr.c_str());
+                    }
+                    else
+                    {
+                        std::string index_expr = make_index_expression(op);
+                        fprintf(pyfp, "v_%s = v_%s[%s]\n", sanitize_identifier(op->outputs[0]->name).c_str(), sanitize_identifier(op->inputs[0]->name).c_str(), index_expr.c_str());
+                    }
+                }
             }
             else if (op->type == "Tensor.expand")
             {
@@ -4029,29 +4064,64 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,
 
     // return if pre node type is TupleConstruct， max_tensor_index not add one add by senli[pnnx_infer]
     {
+        // bool TupleConstruct_flag = false;
+        // int max_tensor_index = 0;
+        // for (const Operator* op : ops)
+        // {
+        //     if (op->type == "pnnx.Output")
+        //     {
+        //         std::vector<Operand*> inputs = op->inputs;
+        //         for (const Operand* tensor : inputs)
+        //         {
+        //             Operator* pre_op = tensor->producer;
+        //             if (pre_op->type == "prim::TupleConstruct")
+        //             {
+        //                 TupleConstruct_flag = true;
+        //             }
+        //         }
+        //         int num = std::stoi(op->inputs[0]->name);
+        //         max_tensor_index = (max_tensor_index > num) ? max_tensor_index : num;
+        //     }
+        // }
+
         bool TupleConstruct_flag = false;
         int max_tensor_index = 0;
-        for (const Operator* op : ops)
+        std::queue<Operator*> output_queue;  
+        for (auto op : ops)
         {
             if (op->type == "pnnx.Output")
             {
-                std::vector<Operand*> inputs = op->inputs;
-                for (const Operand* tensor : inputs)
-                {
-                    Operator* pre_op = tensor->producer;
-                    if (pre_op->type == "prim::TupleConstruct")
-                    {
-                        TupleConstruct_flag = true;
-                    }
-                }
-                int num = std::stoi(op->inputs[0]->name);
-                max_tensor_index = (max_tensor_index > num) ? max_tensor_index : num;
+                output_queue.push(op);
+                break;
             }
         }
-        if (!TupleConstruct_flag)
+        while(!output_queue.empty())
         {
-            max_tensor_index++;
+            auto cur_output_op = output_queue.front();
+            output_queue.pop();
+            std::vector<Operand*> inputs = cur_output_op->inputs;
+            for (const Operand* tensor : inputs)
+            {
+                Operator* pre_op = tensor->producer;
+                if (pre_op->type == "prim::TupleConstruct")
+                {
+                    TupleConstruct_flag = true;
+                    output_queue.push(pre_op);
+                }
+                else
+                {
+                    for(auto out: pre_op->outputs)
+                    {
+                        int num = std::stoi(out->name);
+                        max_tensor_index = (max_tensor_index > num) ? max_tensor_index : num;
+                    }
+                    
+                }
+            }
         }
+
+        max_tensor_index++;
+        
         fprintf(pyfp, "            intermediate = {}\n");
         fprintf(pyfp, "            for i in range(%d):\n", max_tensor_index);
         fprintf(pyfp, "                key = 'v_' + str(i)\n");

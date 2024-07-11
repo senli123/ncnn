@@ -235,6 +235,8 @@ int main(int argc, char** argv)
     std::vector<std::string> start_nodes;
     std::vector<std::string> end_nodes;
     std::string extract_model_name = "model";
+    int skip_pass_level6 = 0;
+    int only_save_main = 0;
     for (int i = 3; i < argc; i++)
     {
         // key=value
@@ -293,6 +295,10 @@ int main(int argc, char** argv)
             parse_string_list(value, end_nodes);
         if (strcmp(key, "extract_model_name") == 0)
             extract_model_name = value;
+        if (strcmp(key, "skip_pass_level6") == 0)
+            skip_pass_level6 = atoi(value);
+        if (strcmp(key, "only_save_main") == 0)
+            only_save_main = atoi(value);
             
     }
 
@@ -336,6 +342,10 @@ int main(int argc, char** argv)
         fprintf(stderr, "\n");
         fprintf(stderr, "extract_model_name = %s\n", extract_model_name.c_str());
         fprintf(stderr, "\n");
+        fprintf(stderr, "skip_pass_level6 = %d\n", skip_pass_level6);
+        fprintf(stderr, "\n");
+        fprintf(stderr, "only_save_main = %d\n", only_save_main);
+        fprintf(stderr, "\n");
         
     }
 
@@ -361,15 +371,23 @@ int main(int argc, char** argv)
     // loop all graph tp pass
     std::queue<std::shared_ptr<pnnx::MainGraph>> main_graph_queue;  
     main_graph_queue.push(pnnx_graph);
-    while( !main_graph_queue.empty())
+   while( !main_graph_queue.empty())
     {
         std::shared_ptr<pnnx::MainGraph> cur_main_graph = main_graph_queue.front();
         main_graph_queue.pop();
         std::shared_ptr<pnnx::Graph> graph = cur_main_graph->get_main_graph(); 
-        for(auto pair: cur_main_graph->sub_graph_map)
+        if(!only_save_main)
         {
-            main_graph_queue.push(pair.second);
-        }        
+            for(auto pair: cur_main_graph->sub_graph_map)
+            {
+                main_graph_queue.push(pair.second);
+            }      
+        }
+        else
+        {
+            fprintf(stderr, "############# only pass main model\n");
+        }
+          
         std::string graph_name = cur_main_graph->name;
         // if(graph_name == "src")
         //     graph_name = "model";
@@ -401,17 +419,34 @@ int main(int argc, char** argv)
 
             pnnx::pass_level5(graph, foldable_constants, foldable_constants_zippath);
 
-            // add by senli 20240321
-            fprintf(stderr, "############# pass_level6 at %s\n",  graph_name.c_str());
+            if(!skip_pass_level6)
+            {
+                // add by senli 20240321
+                fprintf(stderr, "############# pass_level6 at %s\n",  graph_name.c_str());
 
-            pnnx::pass_level6(graph, foldable_constants, foldable_constants_zippath);
+                pnnx::pass_level6(graph, foldable_constants, foldable_constants_zippath);
+
+            }
+            else
+            {
+                 fprintf(stderr, "############# skip pass_level6 at %s\n",  graph_name.c_str());
+            }
+            
         }
 
     }  
 
-    // sub_graph_pass
-    fprintf(stderr, "############# pass_sub_model\n");
-    pnnx::pass_sub_model(pnnx_graph);
+    if(!only_save_main)
+    {
+        // sub_graph_pass
+        fprintf(stderr, "############# pass_sub_model\n");
+        pnnx::pass_sub_model(pnnx_graph); 
+    }
+    else
+    {
+        fprintf(stderr, "############# not need to pass sub model\n");
+    }
+    
 
     // save graph 
     std::queue<std::shared_ptr<pnnx::MainGraph>> main_graph_queue2;  
@@ -422,16 +457,26 @@ int main(int argc, char** argv)
         std::shared_ptr<pnnx::MainGraph> cur_main_graph2 = main_graph_queue2.front();
         main_graph_queue2.pop();
         std::shared_ptr<pnnx::Graph> graph2 = cur_main_graph2->get_main_graph(); 
+        graph2->skip_pass_level6 = skip_pass_level6;
 
-        for(auto pair2: cur_main_graph2->sub_graph_map)
+         if(!only_save_main)
         {
-            auto it = std::find(cur_main_graph2->effective_sub_model_name.begin(), cur_main_graph2->effective_sub_model_name.end(),pair2.first);
-            if(it != cur_main_graph2->effective_sub_model_name.end())
+            for(auto pair2: cur_main_graph2->sub_graph_map)
             {
-                main_graph_queue2.push(pair2.second);
-            }
-            
-        }        
+                auto it = std::find(cur_main_graph2->effective_sub_model_name.begin(), cur_main_graph2->effective_sub_model_name.end(),pair2.first);
+                if(it != cur_main_graph2->effective_sub_model_name.end())
+                {
+                    main_graph_queue2.push(pair2.second);
+                }
+                
+            }        
+        }
+        else
+        {
+            fprintf(stderr, "############# only save main model\n");
+        }
+
+       
         std::string graph_name = cur_main_graph2->name;
         // if(graph_name == "src")
         //     graph_name = "model";

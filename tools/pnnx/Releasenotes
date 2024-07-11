@@ -22,6 +22,7 @@ dev.1.0.5.20240508
 1. Synchronize the main ncnn repository
 2. Fix missing approximate parameters of nn.GELU
 
+
 dev.1.0.6.20240511
 1. Add new pass trans_Stack2Unsqueeze, When using torch.stack with a single input and effectively achieving the same result as torch.unsqueeze
 
@@ -47,7 +48,7 @@ dev.1.0.13.20240530
 1. Trans string to char in getInputType function 
 
 dev.1.0.14.20240531
-1. Fix bug of make_index_expression for gen tensor.index infer op  
+1. Fix bug of make_index_expression for gen tensor.index infer op 
 
 dev.1.0.15.20240603
 1. Support parse Tensor.reshape_as 
@@ -55,6 +56,7 @@ dev.1.0.15.20240603
 
 dev.1.0.16.20240605
 1. fix bug of Tensor.index with two inputs
+    
 
 dev.1.0.17.20240606
 1. Add trans_TensorTypeAs2TensorTo pass in pass level 7
@@ -62,17 +64,24 @@ dev.1.0.17.20240606
 dev.1.0.18.20240613
 1. Skip conv2d nodes of type NoneType
 
+
 dev.1.0.19.20240614
 1. Add extracting sub graph function
 
-dev.1.0.20.20240617
+dev.1.0.20.20240620
 1. Add loop op parse function
+2. Support export sub_model 
+3. Support load input tensor to export
+4. Support torchvision.ops.nms
 
-dev.1.0.21.20240619
-1. Support export sub_model 
 
-dev.1.0.22.20240620
-1. Support load input tensor to export 
+dev.1.0.21.20240627
+1. Support parse multi block
+2. Support if block
 
-dev.1.0.23.20240627
-1. Support If/Loop block
+dev.1.0.22.20240709
+1. Process multi prim::TupleConstruct node at output
+
+dev.1.0.23.20240711
+1. Fix the bug of trans_expression2TupleConstruct
+2. Add skip_pass_level6 and only_save_main mod
