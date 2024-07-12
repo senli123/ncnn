@@ -85,3 +85,6 @@ dev.1.0.22.20240709
 dev.1.0.23.20240711
 1. Fix the bug of trans_expression2TupleConstruct
 2. Add skip_pass_level6 and only_save_main mod
+
+dev.1.0.24.20240712
+1. Fix the bug of extract_sub_graph

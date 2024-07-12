@@ -4909,6 +4909,24 @@ int Graph::extract_sub_graph(const std::vector<std::string>& start_nodes, const 
                             }
                         }
                     }
+                    else if(std::find(extract_start_nodes.begin(), extract_start_nodes.end(), match_node_input->name) != extract_start_nodes.end())
+                    {
+                        for(auto new_input_op: new_input_ops)
+                        {
+                            for(auto new_input_op_output: new_input_op->outputs)
+                            {
+                                if(new_input_op_output->name == match_node_input->name)
+                                {
+                                    if(std::find(new_input_op_output->consumers.begin(), new_input_op_output->consumers.end(), op) != new_input_op_output->consumers.end())
+                                    {
+                                        new_input_op_output->consumers.erase(std::find(new_input_op_output->consumers.begin(), new_input_op_output->consumers.end(), op));
+                                        
+                                    }
+                                    
+                                }
+                            }
+                        }
+                    }
                     else
                     {
                         match_node_input->producer = 0;
@@ -4934,7 +4952,7 @@ int Graph::extract_sub_graph(const std::vector<std::string>& start_nodes, const 
         }
 
         // insert new input outout node
-        ops.insert(ops.end(), new_input_ops.begin(), new_input_ops.end()); 
+        ops.insert(ops.begin(), new_input_ops.begin(), new_input_ops.end()); 
         ops.insert(ops.end(), new_output_ops.begin(), new_output_ops.end());
         
     }
