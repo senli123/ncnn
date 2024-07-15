@@ -2938,7 +2938,7 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,
             int param_count = op->params.size();
             if (op->type == "nn.quantized.Conv2d" || op->type == "nn.quantized.Linear")
             {
-                param_count -= 2; // ignore scale and zero_point
+                param_count -= 3; // ignore scale , zero_point and q_per_channel_axis
             }
 
             int param_index = 0;
@@ -2946,7 +2946,7 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,
             {
                 if (op->type == "nn.quantized.Conv2d" || op->type == "nn.quantized.Linear")
                 {
-                    if (it.first == "scale" || it.first == "zero_point")
+                    if (it.first == "scale" || it.first == "zero_point" || it.first == "weight.q_per_channel_axis")
                         continue;
                 }
 
@@ -3058,11 +3058,19 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,
 
             if (op->type == "nn.quantized.Conv2d" || op->type == "nn.quantized.Linear")
             {
+                bool ChannelAffine = false;
+                int weight_q_per_channel_axis = 0;
                 for (const auto& it : op->attrs)
                 {
                     if (it.first == "weight" || it.first == "bias")
                     {
                         fprintf(pyfp, "        self_%s_%s = self.load_pnnx_bin_as_parameter(archive, '%s.%s', (", sanitize_identifier(op->name).c_str(), it.first.c_str(), op->name.c_str(), it.first.c_str());
+                    }
+                    else if(it.first == "weight.q_per_channel_scales" || it.first == "weight.q_per_channel_zero_points")
+                    {
+                        ChannelAffine = true;
+                        fprintf(pyfp, "        self_%s_%s = self.load_pnnx_bin_as_parameter(archive, '%s.%s', (", sanitize_identifier(op->name).c_str(), sanitize_identifier(it.first).c_str(), op->name.c_str(), it.first.c_str());
+                        weight_q_per_channel_axis = op->params.at("weight.q_per_channel_axis").i;
                     }
                     else
                     {
@@ -3080,8 +3088,17 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,
 
                     fprintf(pyfp, "), '%s', requires_grad=False)\n", type_to_numpy_string(attr.type));
                 }
-
-                fprintf(pyfp, "        self.%s.set_weight_bias(self_%s_weight, self_%s_bias)\n", sanitize_identifier(op->name).c_str(), sanitize_identifier(op->name).c_str(), sanitize_identifier(op->name).c_str());
+                if(ChannelAffine)
+                {
+                    fprintf(pyfp, "        self_%s_qweight = torch.quantize_per_channel(self_%s_weight, scales = self_%s_weight_q_per_channel_scales.to(torch.double), zero_points = self_%s_weight_q_per_channel_zero_points.to(torch.int64), axis=%s, dtype=torch.qint8)\n", sanitize_identifier(op->name).c_str(), sanitize_identifier(op->name).c_str(), sanitize_identifier(op->name).c_str(), sanitize_identifier(op->name).c_str(),std::to_string(weight_q_per_channel_axis).c_str());
+                    fprintf(pyfp, "        self.%s.set_weight_bias(self_%s_qweight, self_%s_bias)\n", sanitize_identifier(op->name).c_str(), sanitize_identifier(op->name).c_str(), sanitize_identifier(op->name).c_str());
+                }
+                else
+                {
+                    fprintf(pyfp, "        self.%s.set_weight_bias(self_%s_weight, self_%s_bias)\n", sanitize_identifier(op->name).c_str(), sanitize_identifier(op->name).c_str(), sanitize_identifier(op->name).c_str());
+                }
+                
+                
                 fprintf(pyfp, "        self.%s.scale = %f\n", sanitize_identifier(op->name).c_str(), op->params.at("scale").f);
                 fprintf(pyfp, "        self.%s.zero_point = %d\n", sanitize_identifier(op->name).c_str(), op->params.at("zero_point").i);
 
@@ -3849,8 +3866,15 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,
                         {
                             if (op->inputnames[i].empty())
                                 continue;
-
-                            fprintf(pyfp, "%s=v_%s", op->inputnames[i].c_str(), sanitize_identifier(op->inputs[i]->name).c_str());
+                            if(op->type == "torch.ops.quantized.add_relu")
+                            {
+                                fprintf(pyfp, "v_%s", sanitize_identifier(op->inputs[i]->name).c_str());
+                            }
+                            else
+                            {
+                                fprintf(pyfp, "%s=v_%s", op->inputnames[i].c_str(), sanitize_identifier(op->inputs[i]->name).c_str());
+                            }
+                            
                             if (i + 1 != op->inputs.size())
                                 fprintf(pyfp, ", ");
                         }
@@ -3876,6 +3900,10 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,
                     else if (op->inputs.empty() && i == 0)
                     {
                         fprintf(pyfp, "%s=", it.first.c_str());
+                    }
+                    else if(op->type == "torch.ops.quantized.add_relu")
+                    {
+                        fprintf(pyfp, ", ");
                     }
                     else
                     {

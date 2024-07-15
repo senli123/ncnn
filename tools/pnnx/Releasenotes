@@ -88,3 +88,6 @@ dev.1.0.23.20240711
 
 dev.1.0.24.20240712
 1. Fix the bug of extract_sub_graph
+
+dev.1.0.25.20240715
+1. Support static qunantize for torch.fx mode

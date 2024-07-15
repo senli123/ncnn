@@ -42,4 +42,34 @@ pnnx.Output             output      1 0 out
 
 REGISTER_GLOBAL_PNNX_GRAPH_REWRITER_PASS(torch_quantize_per_tensor, 20)
 
+
+class torch_quantize_per_tensor_1 : public GraphRewriterPass
+{
+public:
+    const char* match_pattern_graph() const
+    {
+        return R"PNNXIR(7767517
+6 5
+pnnx.Input        input_0           0 1 input
+pnnx.Input        input_scale       0 1 scale
+pnnx.Input        input_zero_point  0 1 zero_point
+pnnx.Input        input_dtype       0 1 dtype
+aten::quantize_per_tensor op_0      4 1 input scale zero_point dtype out
+pnnx.Output             output      1 0 out
+)PNNXIR";
+    }
+
+    const char* type_str() const
+    {
+        return "torch.quantize_per_tensor";
+    }
+
+    void write(Operator* op, const std::map<std::string, Parameter>& captured_params) const
+    {
+        op->params["dtype"] = "torch.quint8";
+        op->inputs.pop_back();
+    }
+};
+
+REGISTER_GLOBAL_PNNX_GRAPH_REWRITER_PASS(torch_quantize_per_tensor_1, 20)
 } // namespace pnnx

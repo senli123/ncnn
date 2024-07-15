@@ -73,14 +73,21 @@ public:
         auto weight = x->elements()[0].toTensor();
         auto bias = x->elements()[1].toTensor();
 
-        op->attrs["weight"] = weight;
-        op->attrs["bias"] = bias;
-
+      
         if (weight.qscheme() == c10::kPerChannelAffine)
         {
             op->attrs["weight.q_per_channel_scales"] = weight.q_per_channel_scales();
             op->attrs["weight.q_per_channel_zero_points"] = weight.q_per_channel_zero_points();
-            //             op->params["weight.q_per_channel_axis"] = weight.q_per_channel_axis();
+            // op->params["weight.q_per_channel_axis"] = weight.q_per_channel_axis();
+            auto dequantize_weight =  weight.dequantize();
+            op->attrs["weight"] = dequantize_weight;
+            op->attrs["bias"] = bias;
+        }
+        else
+        {
+            op->attrs["weight"] = weight;
+            op->attrs["bias"] = bias;
+
         }
 
         op->params["in_channels"] = mod.attr("in_channels").toInt();
@@ -95,6 +102,14 @@ public:
 
         op->params["scale"] = quantized_convolution->namedInput("output_scale");
         op->params["zero_point"] = quantized_convolution->namedInput("output_zero_point");
+        if (weight.qscheme() == c10::kPerChannelAffine)
+        {
+            op->params["weight.q_per_channel_axis"] = weight.q_per_channel_axis();
+        }
+        else
+        {
+            op->params["weight.q_per_channel_axis"] = 0;
+        }
     }
 };
 
@@ -154,15 +169,23 @@ public:
 
         auto weight = x->elements()[0].toTensor();
         auto bias = x->elements()[1].toTensor();
-
-        op->attrs["weight"] = weight;
-        op->attrs["bias"] = bias;
+        // std::cout << bias << std::endl;
 
         if (weight.qscheme() == c10::kPerChannelAffine)
         {
             op->attrs["weight.q_per_channel_scales"] = weight.q_per_channel_scales();
             op->attrs["weight.q_per_channel_zero_points"] = weight.q_per_channel_zero_points();
-            //             op->params["weight.q_per_channel_axis"] = weight.q_per_channel_axis();
+            // op->params["weight.q_per_channel_axis"] = weight.q_per_channel_axis();
+            auto dequantize_weight =  weight.dequantize();
+            // std::cout << dequantize_weight << std::endl;
+            op->attrs["weight"] = dequantize_weight;
+            op->attrs["bias"] = bias;
+        }
+        else
+        {
+            op->attrs["weight"] = weight;
+            op->attrs["bias"] = bias;
+
         }
 
         op->params["in_channels"] = mod.attr("in_channels").toInt();
@@ -177,6 +200,14 @@ public:
 
         op->params["scale"] = quantized_convolution->namedInput("output_scale");
         op->params["zero_point"] = quantized_convolution->namedInput("output_zero_point");
+        if (weight.qscheme() == c10::kPerChannelAffine)
+        {
+            op->params["weight.q_per_channel_axis"] = weight.q_per_channel_axis();
+        }
+        else
+        {
+            op->params["weight.q_per_channel_axis"] = 0;
+        }
     }
 };
 
