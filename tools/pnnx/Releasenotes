@@ -91,3 +91,10 @@ dev.1.0.24.20240712
 
 dev.1.0.25.20240715
 1. Support static qunantize for torch.fx mode
+
+dev.1.0.26.20240723
+1. Add torch,logical_not and torch.nonzero
+2. Add fold constants sub graph pass in pass level5
+3. Add trans unbind2squeeze pass in pass level6
+4. Fix tensor.fill
+5. Fix torch.unbind

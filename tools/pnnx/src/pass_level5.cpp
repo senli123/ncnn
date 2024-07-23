@@ -62,7 +62,7 @@
 #include "pass_level4/canonicalize.h"
 #include "pass_level3/fuse_index_expression.h"
 #include "pass_level5/fuse_pixel_unshuffle.h"
-
+#include "pass_level5/fold_constants_sub_graph.h"
 namespace pnnx {
 
 void pass_level5(std::shared_ptr<pnnx::Graph> g, const std::set<std::string>& foldable_constants, const std::string& foldable_constants_zippath)
@@ -145,6 +145,7 @@ void pass_level5(std::shared_ptr<pnnx::Graph> g, const std::set<std::string>& fo
 
     dead_code_elimination(g);
 
+    fold_constants_sub_graph(g);
     canonicalize(g);
 }
 

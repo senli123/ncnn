@@ -30,6 +30,29 @@
 #include <list>
 namespace pnnx {
 
+static std::vector<std::string> options = {"main", "replace", "delete"};   
+static void get_op_name_label(std::string& src_str, std::string& name, std::string& label)
+{ 
+    
+    size_t pos = src_str.find_last_of('_');  
+   
+    if (pos != std::string::npos) {  
+        name = src_str.substr(0, pos);       
+        label = src_str.substr(pos + 1);
+        auto it = std::find(options.begin(), options.end(), label);  
+        if (it == options.end()) 
+        {  
+            name = src_str;
+            label = "";
+        } 
+  
+    } else {  
+        name = src_str;
+        label = "";
+    }  
+}
+    
+
 static bool type_is_integer(int type)
 {
     if (type == 1) return false;
@@ -735,14 +758,16 @@ int Graph::load(const std::string& parampath, const std::string& binpath)
         std::istringstream iss(line);
 
         std::string type;
-        std::string name;
+        std::string new_op_name;
         int input_count = 0;
         int output_count = 0;
 
-        iss >> type >> name >> input_count >> output_count;
-
+        iss >> type >> new_op_name >> input_count >> output_count;
+        std::string name;
+        std::string label;
+        get_op_name_label(new_op_name, name, label);
         Operator* op = new_operator(type, name);
-
+        op->label = label;
         for (int j = 0; j < input_count; j++)
         {
             std::string operand_name;
@@ -825,8 +850,9 @@ int Graph::save(const std::string& parampath, const std::string& binpath)
 
     for (const Operator* op : ops)
     {
-        fprintf(paramfp, "%-24s %-24s %d %d", op->type.c_str(), op->name.c_str(), (int)op->inputs.size(), (int)op->outputs.size());
-
+        std::string new_op_name =  op->name + "_" + op->label;
+        fprintf(paramfp, "%-24s %-24s %d %d", op->type.c_str(), new_op_name.c_str(), (int)op->inputs.size(), (int)op->outputs.size());
+        
         for (const Operand* oprand : op->inputs)
         {
             fprintf(paramfp, " %s", oprand->name.c_str());
@@ -3919,6 +3945,10 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,
                         {
                             fprintf(pyfp, "torch.tensor(False)");
                         }
+                        else if(op->type == "Tensor.fill") 
+                        {
+                            fprintf(pyfp, "True");
+                        }
                         else
                         {
                             fprintf(pyfp, "None");
@@ -4048,9 +4078,15 @@ int Graph::python_infer(const std::string& pypath, const std::string& binpath,
                         }
                         fprintf(pyfp, ")");
                     }
+                   
                 }
 
-                fprintf(pyfp, ")\n");
+                fprintf(pyfp, ")");
+                if(op->outputs.size() == 1 && op->type == "torch.unbind")
+                {
+                    fprintf(pyfp, "[0]");
+                }
+                fprintf(pyfp, "\n");
             }
             else
             {

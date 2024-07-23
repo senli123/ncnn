@@ -5,7 +5,7 @@
 // #include <torch/extension.h>
 #define STRINGIFY(x)       #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
-#define MYLIBRARY_VERSION  "dev.1.0.25.20240715"
+#define MYLIBRARY_VERSION  "dev.1.0.26.20240716"
 using namespace pnnx_graph;
 using namespace pnnx_ir;
 namespace py = pybind11;
@@ -65,6 +65,7 @@ PYBIND11_MODULE(ptx, m)
     .def_readwrite("outputs", &Operator::outputs)
     .def_readwrite("type", &Operator::type)
     .def_readwrite("name", &Operator::name)
+    .def_readwrite("label", &Operator::label)
     .def_readwrite("inputnames", &Operator::inputnames)
     .def_readwrite("params", &Operator::params)
     .def_readwrite("attrs", &Operator::attrs);

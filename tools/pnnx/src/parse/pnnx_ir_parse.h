@@ -21,6 +21,7 @@
 #include <vector>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <ir.h>
 namespace py = pybind11;
 #if BUILD_PNNX
 namespace torch {
@@ -197,7 +198,7 @@ public:
     // keep std::string typed member the last for cross cxxabi compatibility
     std::string type;
     std::string name;
-
+    std::string label = ""; // main delete replace
     std::vector<std::string> inputnames;
     std::map<std::string, Parameter> params;
     std::map<std::string, Attribute> attrs;

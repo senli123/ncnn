@@ -300,7 +300,7 @@ public:
     // keep std::string typed member the last for cross cxxabi compatibility
     std::string type;
     std::string name;
-
+    std::string label = ""; // main delete replace
     std::vector<std::string> inputnames;
     std::map<std::string, Parameter> params;
     std::map<std::string, Attribute> attrs;

@@ -13,7 +13,6 @@
 // specific language governing permissions and limitations under the License.
 
 #include "pnnx_ir_parse.h"
-
 #include <limits.h>
 #include <stdint.h>
 #include <string.h>
@@ -31,6 +30,27 @@
 using namespace pnnx;
 namespace pnnx_ir {
 
+static std::vector<std::string> options = {"main", "replace", "delete"};   
+static void get_op_name_label(std::string& src_str, std::string& name, std::string& label)
+{ 
+    
+    size_t pos = src_str.find_last_of('_');  
+    
+    if (pos != std::string::npos) {  
+        name = src_str.substr(0, pos);       
+        label = src_str.substr(pos + 1);
+        auto it = std::find(options.begin(), options.end(), label);  
+        if (it == options.end()) 
+        {  
+            name = src_str;
+            label = "";
+        } 
+  
+    } else {
+        name = src_str;
+        label = "";
+    }  
+}
 static size_t countSubstring(const std::string& str, const std::string& substr) {  
     size_t count = 0;  
     size_t pos = 0;  
@@ -765,13 +785,16 @@ int Graph::load(const std::string& parampath, const std::string& binpath)
         std::istringstream iss(line);
 
         std::string type;
-        std::string name;
+        std::string new_op_name;
         int input_count = 0;
         int output_count = 0;
 
-        iss >> type >> name >> input_count >> output_count;
-
+        iss >> type >> new_op_name >> input_count >> output_count;
+        std::string name;
+        std::string label;
+        get_op_name_label(new_op_name, name, label);
         Operator* op = new_operator(type, name);
+        op->label = label;
 
         for (int j = 0; j < input_count; j++)
         {
@@ -855,8 +878,8 @@ int Graph::save(const std::string& parampath, const std::string& binpath)
 
     for (const Operator* op : ops)
     {
-        fprintf(paramfp, "%-24s %-24s %d %d", op->type.c_str(), op->name.c_str(), (int)op->inputs.size(), (int)op->outputs.size());
-
+        std::string new_op_name =  op->name + "_" + op->label;
+        fprintf(paramfp, "%-24s %-24s %d %d", op->type.c_str(), new_op_name.c_str(), (int)op->inputs.size(), (int)op->outputs.size());
         for (const Operand* oprand : op->inputs)
         {
             fprintf(paramfp, " %s", oprand->name.c_str());
@@ -1041,7 +1064,8 @@ int Graph::save_param(const std::string& parampath, const std::vector<Operator>&
 
     for (const Operator op : input_operators)
     {
-        fprintf(paramfp, "%-24s %-24s %d %d", op.type.c_str(), op.name.c_str(), (int)op.inputs.size(), (int)op.outputs.size());
+        std::string new_op_name =  op.name + "_" + op.label;
+        fprintf(paramfp, "%-24s %-24s %d %d", op.type.c_str(), new_op_name.c_str(), (int)op.inputs.size(), (int)op.outputs.size());
 
         for (const Operand* oprand : op.inputs)
         {

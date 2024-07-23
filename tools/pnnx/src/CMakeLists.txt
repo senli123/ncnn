@@ -237,6 +237,7 @@ set(pnnx_pass_level2_SRCS
     pass_level2/torch_index_select.cpp
     pass_level2/torch_le.cpp
     pass_level2/torch_lgamma.cpp
+    pass_level2/torch_logical_not.cpp
     pass_level2/torch_logsumexp.cpp
     pass_level2/torch_lt.cpp
     pass_level2/torch_masked_select.cpp
@@ -248,6 +249,7 @@ set(pnnx_pass_level2_SRCS
     pass_level2/torch_mv.cpp
     pass_level2/torch_narrow.cpp
     pass_level2/torch_ne.cpp
+    pass_level2/torch_nonzero.cpp
     pass_level2/torch_norm.cpp
     pass_level2/torch_normal.cpp
     pass_level2/torch_ones.cpp
@@ -376,6 +378,7 @@ set(pnnx_pass_level5_SRCS
     pass_level5/fuse_static_linear.cpp
     pass_level5/normalize_einsum_equation.cpp
     pass_level5/unroll_rnn_op.cpp
+    pass_level5/fold_constants_sub_graph.cpp
 )
 
 # add by senli 20240321
@@ -385,6 +388,7 @@ set(pnnx_pass_level6_SRCS
     pass_level6/trans_Stack2Unsqueeze.cpp
     pass_level6/trans_ReshapeAs2Reshape.cpp
     pass_level6/trans_TensorTypeAs2TensorTo.cpp
+    pass_level6/trans_Unbind2Squeeze.cpp
 )
 
 set(pnnx_pass_sub_model_SRCS
