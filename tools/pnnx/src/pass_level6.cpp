@@ -39,7 +39,7 @@ void pass_level6(std::shared_ptr<pnnx::Graph> g, const std::set<std::string>& fo
    
     trans_TensorTypeAs2TensorTo(g);
     fprintf(stderr, "############# finish trans_TensorTypeAs2TensorTo\n");
-     trans_Unbind2Squeeze(g);
+    trans_Unbind2Squeeze(g);
     fprintf(stderr, "############# finish trans_Unbind2Squeeze\n");
 }
 

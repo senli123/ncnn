@@ -98,3 +98,6 @@ dev.1.0.26.20240723
 3. Add trans unbind2squeeze pass in pass level6
 4. Fix tensor.fill
 5. Fix torch.unbind
+
+dev.1.0.27.20240725
+1. Fix bug of fold constants sub graph pass in pass level5

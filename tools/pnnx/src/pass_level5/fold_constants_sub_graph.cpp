@@ -58,6 +58,7 @@ void fold_constants_sub_graph(std::shared_ptr<pnnx::Graph> graph)
             {
                 if(consumer->label == "")
                 {
+                    consumer->label = "main";
                     main_node_list.push(consumer);
                 }
             }
@@ -66,7 +67,6 @@ void fold_constants_sub_graph(std::shared_ptr<pnnx::Graph> graph)
         {
             Operator* cur_node = main_node_list.front();
             main_node_list.pop();
-            cur_node->label = "main";
             std::vector<Operand*> output_operands = cur_node->outputs;
             for(auto out: output_operands)
             {
@@ -75,6 +75,7 @@ void fold_constants_sub_graph(std::shared_ptr<pnnx::Graph> graph)
                 {
                     if(consumer->label == "")
                     {
+                        consumer->label = "main";
                         main_node_list.push(consumer);
                     }
                 }
