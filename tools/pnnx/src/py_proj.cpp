@@ -5,7 +5,7 @@
 // #include <torch/extension.h>
 #define STRINGIFY(x)       #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
-#define MYLIBRARY_VERSION  "dev.1.0.27.20240725"
+#define MYLIBRARY_VERSION  "dev.1.0.28.20240730"
 using namespace pnnx_graph;
 using namespace pnnx_ir;
 namespace py = pybind11;

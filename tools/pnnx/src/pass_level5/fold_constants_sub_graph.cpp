@@ -33,13 +33,14 @@ void fold_constants_sub_graph(std::shared_ptr<pnnx::Graph> graph)
     for(size_t i = 0; i < graph->ops.size(); i++)
     {
         Operator* cur_op = graph->ops[i];
-        if (cur_op->type == "pnnx.Attribute")
-        {
-            attribute_node_list.push(cur_op);
-        }
-        else if(cur_op->type == "pnnx.Input" || cur_op->inputs.size() == 0)
+        if (cur_op->type == "pnnx.Input")
         {
             input_node_list.push(cur_op);
+        }
+        else if(cur_op->type == "pnnx.Attribute" || cur_op->inputs.size() == 0)
+        {
+            
+            attribute_node_list.push(cur_op);
         }
     }
 
